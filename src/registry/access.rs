@@ -3,7 +3,7 @@ use super::*;
 use crate::{auth::Claims, policy::Grant};
 
 const MAX_ROOTS: usize = 4096;
-const MAX_POLICY_BYTES: usize = 32 * 1024 * 1024;
+pub(super) const MAX_POLICY_BYTES: usize = 32 * 1024 * 1024;
 
 fn unrestricted(layers: &[Vec<Grant>], repo: &str, action: &str) -> bool {
     layers.iter().all(|rules| {

@@ -20,13 +20,46 @@ convention chosen by its owner. A policy can cover several such namespaces.
 Repositories can contain models, drawings, reports, or other artifact profiles.
 The manifest's `artifactType` and its descriptors' media types describe the
 content. Applications decide which profiles they can interpret. The server
-accepts the OCI image-manifest envelope for arbitrary artifacts; OCI indexes and
-referrers are outside its supported API. The experimental viewer opens supported
-IFC source artifacts.
+accepts the OCI image-manifest envelope for arbitrary artifacts and supports
+native OCI 1.1 referrers. Publishing OCI indexes is outside its supported API.
+The experimental viewer opens supported IFC source artifacts.
 
 Within a repository, a tag names a published version and a digest identifies its
 exact manifest bytes. Tags are immutable, so publishing changed content requires
 a new tag. A digest reference identifies the same content regardless of its tags.
+
+### Reports and other attachments
+
+An application can publish a report or another artifact with an OCI `subject`
+descriptor naming the exact model manifest it concerns. The server acknowledges
+accepted subject links with `OCI-Subject`, including repeated publication of the
+same bytes. The subject uses a SHA-256 digest, media type, and nonnegative byte
+size. Its target need not exist in the repository yet; the link does not grant
+access to that target or prove the report's findings.
+
+`GET /v2/<repository>/referrers/<subject-digest>` returns an OCI image index of
+matching attachments in that repository. It requires `pull` access and includes
+only manifests the caller may read under their account, share, or public policy.
+Sharing a model alone does not automatically share its reports. Empty results
+return HTTP 200 with an empty `manifests` array, including when the subject has
+not been published. Invalid subject digests return HTTP 400.
+
+The optional `artifactType` query filters by artifact type, with
+`OCI-Filters-Applied: artifactType` in the response. A manifest without a nonempty
+artifact type uses its config media type. Each result includes the attachment's
+manifest digest, size, media type, artifact type, and declared annotations.
+Listings use digest order and accept `n` (1–1000, default 100) and `last`; follow
+the `Link` header for subsequent pages. Each link preserves the type filter.
+Discovery reads the stored manifests, so existing subject links remain
+discoverable after an upgrade or restart without rebuilding a separate index.
+It uses the same bounded repository-root discovery as access checks, with a
+32 MiB manifest-reading budget per page.
+
+Standard discovery is repository-local. Store a report alongside its model when
+apps need to find it from that model. An IDS file can come from another registry;
+the report should record its exact source and version separately. Applications
+define and interpret that report content. Subsoil does not search remote
+registries or automatically include attachments when copying a single release.
 
 ## JSON grant policies
 

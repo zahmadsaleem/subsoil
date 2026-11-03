@@ -249,6 +249,8 @@ async fn cors_covers_authentication_errors_and_authenticated_blob_uploads() -> R
         "docker-content-digest",
         "docker-upload-uuid",
         "docker-distribution-api-version",
+        "oci-subject",
+        "oci-filters-applied",
         "location",
         "link",
         "range",

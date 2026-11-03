@@ -34,6 +34,7 @@ mod explorer;
 pub(crate) mod open_artifact;
 mod public_url;
 mod publication;
+mod referrers;
 mod shares;
 
 /// Optional metadata for browser clients; publication headers are a Subsoil extension.
@@ -477,7 +478,7 @@ async fn endpoint(
 ) -> std::result::Result<Response, ApiError> {
     // Repository components may themselves be named blobs, manifests, or tags.
     // Resolve the last resource delimiter once and use it for both auth and dispatch.
-    let mut routes: Vec<_> = ["/blobs/", "/manifests/"]
+    let mut routes: Vec<_> = ["/blobs/", "/manifests/", "/referrers/"]
         .into_iter()
         .filter_map(|marker| path.rfind(marker).map(|at| (at, marker)))
         .collect();
@@ -645,7 +646,21 @@ async fn endpoint(
                         .into(),
                 ));
             }
+            let subject = referrers::subject(&manifest).map_err(|error| {
+                ApiError(
+                    StatusCode::BAD_REQUEST,
+                    "MANIFEST_INVALID",
+                    error.to_string(),
+                )
+            })?;
             let value = digest(&body);
+            let mut metadata = vec![
+                ("location", format!("/v2/{repo}/manifests/{value}")),
+                ("docker-content-digest", value.clone()),
+            ];
+            if let Some(subject) = subject {
+                metadata.push(("oci-subject", subject.into()));
+            }
             if reference.starts_with("sha256:") {
                 if reference != value {
                     return Err(ApiError::bad("Manifest digest mismatch"));
@@ -666,27 +681,13 @@ async fn endpoint(
                         "Tags are immutable; publish a new version name".into(),
                     ));
                 }
-                return Ok(response(
-                    StatusCode::CREATED,
-                    Body::empty(),
-                    &[
-                        ("location", format!("/v2/{repo}/manifests/{value}")),
-                        ("docker-content-digest", value),
-                    ],
-                ));
+                return Ok(response(StatusCode::CREATED, Body::empty(), &metadata));
             }
             if reference.starts_with("sha256:") && manifest_path.exists() {
                 if fs::read(&manifest_path)? != body {
                     return Err(ApiError::bad("Stored manifest integrity failure"));
                 }
-                return Ok(response(
-                    StatusCode::CREATED,
-                    Body::empty(),
-                    &[
-                        ("location", format!("/v2/{repo}/manifests/{value}")),
-                        ("docker-content-digest", value),
-                    ],
-                ));
+                return Ok(response(StatusCode::CREATED, Body::empty(), &metadata));
             }
             let config = manifest
                 .get("config")
@@ -729,14 +730,7 @@ async fn endpoint(
                     value.as_bytes(),
                 )?;
             }
-            return Ok(response(
-                StatusCode::CREATED,
-                Body::empty(),
-                &[
-                    ("location", format!("/v2/{repo}/manifests/{value}")),
-                    ("docker-content-digest", value),
-                ],
-            ));
+            return Ok(response(StatusCode::CREATED, Body::empty(), &metadata));
         }
         if method == Method::GET || method == Method::HEAD {
             let value = if reference.starts_with("sha256:") {
@@ -767,6 +761,10 @@ async fn endpoint(
                 ("docker-content-digest", value),
             ]);
             return Ok(response(StatusCode::OK, bytes, &metadata));
+        }
+    } else if marker == "/referrers/" {
+        if method == Method::GET {
+            return referrers::list(&registry, &claims, repo, reference, &query);
         }
     } else if marker == "/tags/list" {
         valid_repo(repo)?;

@@ -30,6 +30,9 @@ cargo test --locked
 node --test tests/open_artifact_client.mjs
 node --test tests/explorer_client.mjs
 SUBSOIL_TEST_ORAS="$(command -v oras)" cargo test --locked --test showcase
+# Native attachment/discovery interoperability, using a local zot executable:
+SUBSOIL_TEST_ORAS="$(command -v oras)" SUBSOIL_TEST_ZOT=/path/to/zot \
+  cargo test --locked --test referrers_oras -- --ignored --nocapture
 nix flake check --no-build
 git diff --check
 ```
@@ -243,6 +246,46 @@ Downloading does not validate a profile or select an IFC file from the package.
 Use `verify <directory>` to explicitly validate the supported subsoil profile,
 including its required tables and internal references. Conversion and native
 publishing also use that validator to check their output and input respectively.
+
+### Attach and discover results with ORAS
+
+A report is an ordinary OCI artifact whose `subject` points to the model version
+it concerns. Native OCI referrers let another app discover that report without
+changing the model. The same commands work with Subsoil and zot:
+
+```sh
+oras login localhost:5000 --plain-http --username writer
+oras push localhost:5000/project/model:model-1 --plain-http \
+  --artifact-type application/vnd.example.ifc-release.v1 \
+  model.ifc:application/x-step
+oras attach localhost:5000/project/model:model-1 --plain-http \
+  --artifact-type application/vnd.example.ids-report.v1+json \
+  report.json:application/json
+oras discover localhost:5000/project/model:model-1 --plain-http \
+  --distribution-spec v1.1-referrers-api --format json
+```
+
+The example media types are application-defined, not a standardized IDS report
+profile. Supply a report produced by your checker; attaching it does not perform
+validation. ORAS resolves `model-1` to a manifest digest for the subject link.
+Use `@sha256:…` directly when the model version is already pinned. Retrieve the
+report using its discovered digest with `oras pull`. The account needs `pull`
+and unrestricted repository `push` permission to publish an untagged attachment
+by digest. Readers need permission for the report as well as any model they open.
+Remote deployments use HTTPS and omit `--plain-http`.
+
+Subsoil acknowledges the subject so ORAS does not need the referrers tag fallback.
+The server returns an image index from the Referrers API but does not accept
+uploaded indexes or mutable fallback tags. `subsoil push` continues to publish
+the native Subsoil release format; use ORAS or an OCI client for arbitrary reports.
+`subsoil copy` copies one manifest and its files. Use `oras cp --recursive` when
+the model and its referrers should travel together between registries.
+
+The interoperability test runs ORAS attachment, automatic and forced native
+discovery, report retrieval, unchanged source manifests, and recursive copying
+from Subsoil to zot. It starts both servers on loopback with temporary stores.
+
+### Shared IFC release annotations
 
 When publishing a release containing exactly one original IFC layer with
 `application/x-step` and a `.ifc` title, subsoil adds these provisional

@@ -57,6 +57,10 @@ registry API when applications understand their formats. Publication details,
 including who added a version and when, are recorded separately from its
 immutable content.
 
+Applications can attach reports and other results to an exact model version
+using native OCI referrers. Other compatible tools can discover and receive
+those results through the standard API. See [attaching results with ORAS](docs/DEVELOPMENT.md#attach-and-discover-results-with-oras).
+
 ## Browse, share, and open a release
 
 Open `/explore` at your registry's address and sign in. The **Files** page shows

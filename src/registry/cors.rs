@@ -62,6 +62,8 @@ impl Registry {
                     header::HeaderName::from_static("docker-content-digest"),
                     header::HeaderName::from_static("docker-distribution-api-version"),
                     header::HeaderName::from_static("docker-upload-uuid"),
+                    header::HeaderName::from_static("oci-subject"),
+                    header::HeaderName::from_static("oci-filters-applied"),
                     header::HeaderName::from_static("subsoil-registry-publisher"),
                     header::HeaderName::from_static("subsoil-registry-share-id"),
                     header::HeaderName::from_static("subsoil-registry-created-by"),
