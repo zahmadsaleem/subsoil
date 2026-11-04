@@ -1,6 +1,12 @@
 <h1><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/subsoil-logo-chalk.svg"><img src="assets/brand/subsoil-logo.svg" alt="Subsoil" width="280"></picture></h1>
 
 [Read the project pitch](https://madsolame.com/subsoil/).
+[Read the research on CDEs, information flow, and AI](docs/CDE_AI_RESEARCH.md).
+
+Subsoil is a usable demonstration of OCI-based project information exchange.
+OCI defines the generic packaging and delivery specifications; tools such as
+ORAS and other compatible clients and registries can participate independently.
+Using this approach does not require adopting Subsoil or its model profile.
 
 **Share an IFC model release between tools and organizations through an
 owner-controlled registry.**

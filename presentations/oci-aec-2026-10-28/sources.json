@@ -1,142 +1,51 @@
 {
-  "checked": "2026-10-31",
-  "presented_slides": 16,
-  "verified_product": "AnkerDB",
-  "prototype_commit": "1c1c2fe469b0c930cfc4f7e78d76121fc4e55dec",
+  "presented_slides": 12,
+  "audience": "AEC teams, owners, tool builders and data practitioners",
+  "presentation_copy": "A vision for connected project information that stays useful across teams, tools, and the life of a building.",
   "sources": [
     {
-      "id": "S1",
-      "title": "IFClite — official product site",
-      "url": "https://ifclite.dev/",
-      "supports": "Browser viewer with local file loading; modular toolkit. These are product claims, not independently benchmarked here."
-    },
-    {
-      "id": "S2",
-      "title": "IFClite — official source repository",
-      "url": "https://github.com/LTplus-AG/ifc-lite",
-      "supports": "Open-source toolkit and modular packages; browser, SDK and CLI capabilities."
-    },
-    {
-      "id": "S5",
-      "title": "AnkerDB — About",
-      "url": "https://ankerdb.com/about",
-      "supports": "Public product name and BIM information / delivery workflow positioning."
-    },
-    {
-      "id": "S6",
-      "title": "OCI Image Specification 1.1.1 — artifact usage",
-      "url": "https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md#guidelines-for-artifact-usage",
-      "supports": "OCI manifests may package content other than container images; typed payload descriptors."
-    },
-    {
-      "id": "S7",
-      "title": "OCI Distribution Specification 1.1.1",
+      "id": "T1",
+      "title": "OCI distribution",
       "url": "https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md",
-      "supports": "Registry push/pull interfaces, manifests, blobs and digest verification. Domain semantics remain a separate agreement."
+      "supports": "Generic content distribution, exact digest references and referrer discovery."
     },
     {
-      "id": "S8",
-      "title": "ORAS — pushing and pulling artifacts",
-      "url": "https://oras.land/docs/how_to_guides/pushing_and_pulling/",
-      "supports": "Single-file and multiple-file artifact transfer, including local registry examples."
-    },
-    {
-      "id": "S9",
-      "title": "ORAS — copy artifacts between registries",
-      "url": "https://oras.land/docs/commands/oras_cp/",
-      "supports": "Explicit registry-to-registry copy and OCI layout transfer; not automatic synchronization."
-    },
-    {
-      "id": "S10",
-      "title": "ORAS — registry authentication",
-      "url": "https://oras.land/docs/commands/oras_login/",
-      "supports": "Login and authentication still form part of registry deployment and use."
-    },
-    {
-      "id": "S11",
-      "title": "Subsoil — source-preserving conversion and integrity-checked exchange",
-      "url": "https://github.com/zahmadsaleem/subsoil/blob/1c1c2fe469b0c930cfc4f7e78d76121fc4e55dec/README.md",
-      "supports": "Original IFC included by default, additional derived data and geometry, generic integrity-checked pull, and explicit subsoil profile validation. Repository tests cover two-registry transfer and an independent ORAS-authored IFC release."
-    },
-    {
-      "id": "S12",
-      "title": "buildingSMART — Information Delivery Specification (IDS)",
-      "url": "https://github.com/buildingSMART/IDS",
-      "supports": "Computer-interpretable information requirements for IFC. Domain tools can read IDS and check IFC against those requirements; OCI only packages and distributes the files."
-    },
-    {
-      "id": "S13",
-      "title": "buildingSMART — buildingSMART Data Dictionary (bSDD)",
-      "url": "https://github.com/buildingSMART/bSDD",
-      "supports": "An online service hosting dictionary definitions, classifications and properties. Reservoir tanks here represent references to selected definitions or permitted snapshots, not a local copy of the live bSDD service."
-    },
-    {
-      "id": "S14",
-      "title": "CNCF Distribution — deploying a registry",
-      "url": "https://distribution.github.io/distribution/about/deploying/",
-      "supports": "Registry implementation support for TLS and authentication/access restriction, enabled through deployment configuration."
-    },
-    {
-      "id": "S15",
-      "title": "CNCF Distribution — token authentication and authorization",
-      "url": "https://distribution.github.io/distribution/spec/auth/token/",
-      "supports": "Registry token flow supports authenticated clients and repository/action-scoped authorization through an access-control service."
-    },
-    {
-      "id": "S16",
-      "title": "zot — registry binaries for local deployment",
-      "url": "https://github.com/project-zot/zot/releases/tag/v2.1.22",
-      "supports": "Official release provides standalone zot registry binaries for macOS, Linux and FreeBSD. Local-binary registry deployment is an available implementation option."
-    },
-    {
-      "id": "S17",
-      "title": "Microsoft — OCI artifacts in Azure Container Registry",
-      "url": "https://learn.microsoft.com/en-us/azure/container-registry/container-registry-manage-artifact",
-      "supports": "A cloud registry can store and distribute OCI artifacts using ORAS. Deployment examples on the slide are illustrative, not existing AEC product integrations."
-    },
-    {
-      "id": "S18",
-      "title": "IFClite: maintainer decision on whole-file ingestion and layers",
-      "url": "https://github.com/LTplus-AG/ifc-lite/issues/8203#issuecomment-6446094066",
-      "supports": "Direction: ifc-git derives delta layers and records matching; Layer PRs owns history, merge and review. The proposed portable query contract in these slides is an additional ecosystem proposal."
-    },
-    {
-      "id": "S19",
-      "title": "IFClite: proposed scope reconciliation for ifc-git",
-      "url": "https://github.com/LTplus-AG/ifc-lite/pull/8217",
-      "supports": "Documentation proposal narrowing ifc-git to a delivery-to-layer adapter. No implemented OCI adapter or common query profile is claimed."
-    },
-    {
-      "id": "S20",
-      "title": "OCI: content descriptors and byte identity",
-      "url": "https://github.com/opencontainers/image-spec/blob/v1.1.1/descriptor.md",
-      "supports": "Payload descriptors identify media type, digest and size. Domain semantics, query schemas and identity mappings belong to the proposed AEC profile."
-    },
-    {
-      "id": "S21",
-      "title": "buildingSMART discussion: encoding flexibility and interoperable IFC5 artifacts through OCI",
-      "url": "https://github.com/buildingSMART/IFC5-development/issues/155",
-      "supports": "Proposal separating IFC semantics, encoding profiles, artifact contract and OCI distribution. The encodings on this slide are a proposed profile agreement, not an approved standard."
-    },
-    {
-      "id": "S22",
-      "title": "IANA: Apache Parquet media type",
-      "url": "https://www.iana.org/assignments/media-types/application/vnd.apache.parquet",
-      "supports": "Registered application/vnd.apache.parquet media type."
-    },
-    {
-      "id": "S23",
-      "title": "IANA: binary glTF media type",
-      "url": "https://www.iana.org/assignments/media-types/model/gltf-binary",
-      "supports": "Registered model/gltf-binary media type for GLB."
-    },
-    {
-      "id": "S24",
-      "title": "IFC Lite — proposed registry source integration",
-      "url": "https://github.com/LTplus-AG/ifc-lite/pull/8310",
-      "supports": "Proposed viewer integration for registry login, browsing versions, opening IFC, editing and publishing a new version. The public workflow with another application is a demonstration to build with participating maintainers."
+      "id": "T2",
+      "title": "OCI artifacts",
+      "url": "https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md",
+      "supports": "Non-container artifacts, descriptors and subject associations; no domain semantics or execution."
     }
   ],
-  "presentation_copy": "Fourteen-slide pitch introducing owner-controlled project files, addressing change reports, and proposing a public workflow across two apps before wider ecosystem participation.",
-  "audience": "AEC tool builders and teams"
+  "illustrations": [
+    {
+      "file": "assets/papercut-continuity.png",
+      "method": "built-in image_gen",
+      "art_direction": "Use case: illustration-story. Asset type: editorial illustration for a minimal presentation about AEC project information. Style: sophisticated tactile paper-cut diorama, cut and folded heavyweight colored paper, subtle visible paper fibres, clean layered silhouettes, restrained architectural detail, soft studio daylight, realistic shallow shadows, slightly elevated three-quarter view. Palette strictly warm ivory #f5f2e9, deep forest teal #183e40, muted teal #24786e, sage #d8e9df, dusty terracotta #cf7258, occasional pale lime #d5f49e. Matte paper, no glossy plastic, no gradients masquerading as paper. Composition: landscape 3:2, isolated sculptural scene occupying the center 85 percent with generous uncluttered margins, solid warm ivory background #f5f2e9. No text, no lettering, no numbers, no symbols resembling code, no brand logos, no watermarks, no screens with legible UI. This is a concept illustration, not a product screenshot. Primary request: Show the enduring life of project information. A calm architectural archive of layered paper plans and model pieces forms a broad stable ground platform. Across the platform stand three small elegant buildings at different life stages: a concept mass, a building being assembled with a small simple crane, and a finished occupied building with a tree. A single continuous teal paper ribbon threads through the three stages and into the archive. Tiny human paper silhouettes indicate collaborators. Focus on continuity, accumulated knowledge and the long life of buildings; avoid a busy city or generic sci-fi technology."
+    },
+    {
+      "file": "assets/papercut-fragmented.png",
+      "method": "built-in image_gen",
+      "art_direction": "Use case: illustration-story. Asset type: editorial illustration for a minimal presentation about AEC project information. Style: sophisticated tactile paper-cut diorama, cut and folded heavyweight colored paper, subtle visible paper fibres, clean layered silhouettes, restrained architectural detail, soft studio daylight, realistic shallow shadows, slightly elevated three-quarter view. Palette strictly warm ivory #f5f2e9, deep forest teal #183e40, muted teal #24786e, sage #d8e9df, dusty terracotta #cf7258, occasional pale lime #d5f49e. Matte paper, no glossy plastic, no gradients masquerading as paper. Composition: landscape 3:2, isolated sculptural scene occupying the center 85 percent with generous uncluttered margins, solid warm ivory background #f5f2e9. No text, no lettering, no numbers, no symbols resembling code, no brand logos, no watermarks, no screens with legible UI. This is a concept illustration, not a product screenshot. Primary request: Three separate compact paper islands representing project organizations, each carrying a small architectural model, a folder, and a different simple upright app window. The islands are separated by visible gaps. Short folded paper bridges reach toward each other but fail to connect at the gap; a few duplicate loose drawing sheets sit at each end. Convey repeated handoffs and disconnected information, not disaster. Strong clear three-part composition, restrained details, one human silhouette on each island. No arrows or text."
+    },
+    {
+      "file": "assets/papercut-workshop.png",
+      "method": "built-in image_gen",
+      "art_direction": "Use case: illustration-story. Asset type: editorial illustration for a minimal presentation about AEC project information. Style: sophisticated tactile paper-cut diorama, cut and folded heavyweight colored paper, subtle visible paper fibres, clean layered silhouettes, restrained architectural detail, soft studio daylight, realistic shallow shadows, slightly elevated three-quarter view. Palette strictly warm ivory #f5f2e9, deep forest teal #183e40, muted teal #24786e, sage #d8e9df, dusty terracotta #cf7258, occasional pale lime #d5f49e. Matte paper, no glossy plastic, no gradients masquerading as paper. Composition: landscape 3:2, isolated sculptural scene occupying the center 85 percent with generous uncluttered margins, solid warm ivory background #f5f2e9. No text, no lettering, no numbers, no symbols resembling code, no brand logos, no watermarks, no screens with legible UI. This is a concept illustration, not a product screenshot. Primary request: An architect's small inventive workshop where a designer creates purpose-built tools. An elegant paper workbench holds three different miniature tool panels: a building-view panel with a simple geometric building, a measurement panel with bars, and a checker panel with aligned geometric tiles. A pair of paper human hands assembles one small panel from cut paper components; finished panels are ready to use beside a modest building model and a stack of project sheets. Convey human agency and accessible software creation, without robots, magic sparkles, code, screens of text, or branded technology."
+    },
+    {
+      "file": "assets/papercut-shared-ground.png",
+      "method": "built-in image_gen",
+      "art_direction": "Use case: illustration-story. Asset type: editorial illustration for a minimal presentation about AEC project information. Style: sophisticated tactile paper-cut diorama, cut and folded heavyweight colored paper, subtle visible paper fibres, clean layered silhouettes, restrained architectural detail, soft studio daylight, realistic shallow shadows, slightly elevated three-quarter view. Palette strictly warm ivory #f5f2e9, deep forest teal #183e40, muted teal #24786e, sage #d8e9df, dusty terracotta #cf7258, occasional pale lime #d5f49e. Matte paper, no glossy plastic, no gradients masquerading as paper. Composition: landscape 3:2, isolated sculptural scene occupying the center 85 percent with generous uncluttered margins, solid warm ivory background #f5f2e9. No text, no lettering, no numbers, no symbols resembling code, no brand logos, no watermarks, no screens with legible UI. This is a concept illustration, not a product screenshot. Primary request: Three independent architectural workspaces sit on separate small platforms above a broad visible layered teal foundation. Each workspace has its own model and neat archive. Simple folded paper paths in the foundation connect the workspaces, carrying identical small ivory folded file packets with a small sage square marker. Each organization remains visibly distinct; there is no central giant server, headquarters, cloud or single controlling hub. One packet is visible in transit. The shared foundation is the visual hero. Calm, legible, constructive architectural diorama."
+    },
+    {
+      "file": "assets/papercut-knowledge.png",
+      "method": "built-in image_gen",
+      "art_direction": "Use case: illustration-story. Asset type: editorial illustration for a minimal presentation about AEC project information. Style: sophisticated tactile paper-cut diorama, cut and folded heavyweight colored paper, subtle visible paper fibres, clean layered silhouettes, restrained architectural detail, soft studio daylight, realistic shallow shadows, slightly elevated three-quarter view. Palette strictly warm ivory #f5f2e9, deep forest teal #183e40, muted teal #24786e, sage #d8e9df, dusty terracotta #cf7258, occasional pale lime #d5f49e. Matte paper, no glossy plastic, no gradients masquerading as paper. Composition: landscape 3:2, isolated sculptural scene occupying the center 85 percent with generous uncluttered margins, solid warm ivory background #f5f2e9. No text, no lettering, no numbers, no symbols resembling code, no brand logos, no watermarks, no screens with legible UI. This is a concept illustration, not a product screenshot. Primary request: An orderly archive of project knowledge that can be reused. Three small different building models sit on three neatly layered sets of paper drawings, with small folded report cards beside them. Thin teal paper ribbons connect the model and report within each set, preserving their relationship. In the foreground a designer selects one card from the archive and places it beside a new emerging model. A small sage tree grows next to the archive as a subtle metaphor for accumulated knowledge. Keep composition very simple and premium, few elements, no digits or labels."
+    },
+    {
+      "file": "assets/papercut-access.png",
+      "method": "built-in image_gen",
+      "art_direction": "Use case: illustration-story. Asset type: editorial illustration for a minimal presentation about AEC project information. Style: sophisticated tactile paper-cut diorama, cut and folded heavyweight colored paper, subtle visible paper fibres, clean layered silhouettes, restrained architectural detail, soft studio daylight, realistic shallow shadows, slightly elevated three-quarter view. Palette strictly warm ivory #f5f2e9, deep forest teal #183e40, muted teal #24786e, sage #d8e9df, dusty terracotta #cf7258, occasional pale lime #d5f49e. Matte paper, no glossy plastic, no gradients masquerading as paper. Composition: landscape 3:2, isolated sculptural scene occupying the center 85 percent with generous uncluttered margins, solid warm ivory background #f5f2e9. No text, no lettering, no numbers, no symbols resembling code, no brand logos, no watermarks, no screens with legible UI. This is a concept illustration, not a product screenshot. Primary request: A precise visual metaphor for deliberate access to project information. A neat architectural archive of folded drawings and one small model sits within a low teal paper boundary. A human paper figure opens one small gate and hands a single ivory folded file packet through it to a small specialist app panel outside. Other archive packets remain inside. The gate is calm and welcoming, no padlock as central symbol, no shield, no hacker imagery, no surveillance, no fortress. Emphasize selected access and human control, not a promise of perfect security."
+    }
+  ]
 }
