@@ -21,7 +21,11 @@ TITLES = (
     "Should agents operate on software or data?",
     "Open to the task. Closed to everything else.",
     "Every project leaves the next one wiser.",
-    "A common way to carry the work.",
+    "Connect the systems people already use.",
+    "Different information. A common way to exchange.",
+    "A few shared building blocks.",
+    "Import from. Open with. Publish back.",
+    "Connect organizations. Keep control.",
     "Change the tools. Keep the knowledge.",
     "What could we build if the work stayed connected?",
 )

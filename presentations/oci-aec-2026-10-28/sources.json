@@ -1,7 +1,7 @@
 {
-  "presented_slides": 12,
+  "presented_slides": 16,
   "audience": "AEC teams, owners, tool builders and data practitioners",
-  "presentation_copy": "A vision for connected project information that stays useful across teams, tools, and the life of a building.",
+  "presentation_copy": "A vision for lasting project knowledge, with an illustrated architecture for connecting people, systems, information, and independent applications.",
   "sources": [
     {
       "id": "T1",
