@@ -1,6 +1,7 @@
 <h1><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/subsoil-logo-chalk.svg"><img src="assets/brand/subsoil-logo.svg" alt="Subsoil" width="280"></picture></h1>
 
 [Read the project pitch](https://madsolame.com/subsoil/).
+[Open the practical handbook](docs/handbook.html).
 [Read the research on CDEs, information flow, and AI](docs/CDE_AI_RESEARCH.md).
 
 Subsoil is a usable demonstration of OCI-based project information exchange.
