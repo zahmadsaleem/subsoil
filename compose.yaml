@@ -1,0 +1,70 @@
+name: subsoil-demo
+services:
+  keycloak:
+    build: ./demo/keycloak
+    command: ["start-dev", "--features=docker", "--import-realm", "--hostname=http://localhost:8080", "--hostname-backchannel-dynamic=true"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin-demo-password
+    ports: ["127.0.0.1:8080:8080"]
+    volumes:
+      - ./demo/keycloak/realm.json:/opt/keycloak/data/import/subsoil-realm.json:ro
+      - keycloak-data:/opt/keycloak/data
+  zot-init:
+    image: python:3.14-slim
+    command: ["python", "/demo/prepare-zot.py"]
+    volumes:
+      - ./demo:/demo:ro
+      - zot-config:/config
+    depends_on: [keycloak]
+  zot:
+    image: ghcr.io/project-zot/zot:v2.1.23
+    command: ["serve", "/config/zot.json"]
+    volumes:
+      - zot-config:/config:ro
+      - zot-data:/var/lib/zot
+    depends_on:
+      zot-init: {condition: service_completed_successfully}
+  registry:
+    image: envoyproxy/envoy:v1.36.4
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "warn"]
+    ports: ["127.0.0.1:5001:8080"]
+    volumes:
+      - ./demo/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - zot-config:/config:ro
+    depends_on: [zot, keycloak]
+  subsoil:
+    build: .
+    command: ["serve", "--config", "/demo/subsoil.json", "--listen", "0.0.0.0:5000"]
+    ports: ["127.0.0.1:5080:5000"]
+    volumes: ["./demo/subsoil.json:/demo/subsoil.json:ro"]
+    depends_on: [registry]
+  seed:
+    image: python:3.14-slim
+    command: ["python", "/demo/seed.py"]
+    volumes: ["./demo:/demo:ro"]
+    depends_on: [registry]
+  smoke:
+    profiles: ["test"]
+    image: python:3.14-slim
+    command: ["python", "/demo/smoke.py"]
+    environment:
+      REGISTRY_URL: http://registry:8080
+      SUBSOIL_URL: http://subsoil:5000
+      ISSUER_URL: http://keycloak:8080/realms/subsoil
+      ISSUER_PUBLIC: http://localhost:8080/realms/subsoil
+    volumes: ["./demo:/demo:ro"]
+    depends_on:
+      seed: {condition: service_completed_successfully}
+      subsoil: {condition: service_started}
+  viewer:
+    profiles: ["viewer"]
+    build:
+      context: ${IFC_LITE_CHECKOUT:-../../lt-plus/ifc-lite}
+      dockerfile: apps/viewer/Dockerfile.registry
+    ports: ["127.0.0.1:3001:3000"]
+    depends_on: [keycloak, registry]
+volumes:
+  keycloak-data:
+  zot-config:
+  zot-data:

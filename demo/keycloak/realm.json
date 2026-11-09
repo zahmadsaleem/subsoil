@@ -1,0 +1,285 @@
+{
+  "realm": "subsoil",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0,
+  "roles": {
+    "realm": [
+      {
+        "name": "repository:project/model:pull"
+      },
+      {
+        "name": "repository:project/model:push"
+      },
+      {
+        "name": "repository:reviews/model:pull"
+      },
+      {
+        "name": "repository:reviews/model:push"
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "repository:project/model:pull",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "repository:project/model:push",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "repository:reviews/model:pull",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "repository:reviews/model:push",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    },
+    {
+      "name": "registry:catalog:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "subsoil-browser",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5080/explore"
+      ],
+      "webOrigins": [
+        "http://localhost:5080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [],
+      "optionalClientScopes": [
+        "repository:project/model:pull",
+        "repository:project/model:push",
+        "repository:reviews/model:pull",
+        "repository:reviews/model:push",
+        "registry:catalog:read"
+      ],
+      "protocolMappers": [
+        {
+          "name": "Registry permissions",
+          "protocol": "openid-connect",
+          "protocolMapper": "subsoil-demo-registry-token",
+          "config": {
+            "registry": "http://localhost:5001",
+            "service": "zot"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "ifc-lite",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3000/open-artifact/callback",
+        "http://localhost:3000/oauth/registry/callback",
+        "http://localhost:3001/open-artifact/callback",
+        "http://localhost:3001/oauth/registry/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://localhost:3001"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [],
+      "optionalClientScopes": [
+        "repository:project/model:pull",
+        "repository:project/model:push",
+        "repository:reviews/model:pull",
+        "repository:reviews/model:push",
+        "registry:catalog:read"
+      ],
+      "protocolMappers": [
+        {
+          "name": "Registry permissions",
+          "protocol": "openid-connect",
+          "protocolMapper": "subsoil-demo-registry-token",
+          "config": {
+            "registry": "http://localhost:5001",
+            "service": "zot"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "demo-seed",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "demo-seed-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": [],
+      "optionalClientScopes": [
+        "repository:project/model:pull",
+        "repository:project/model:push",
+        "repository:reviews/model:pull",
+        "repository:reviews/model:push",
+        "registry:catalog:read"
+      ],
+      "protocolMappers": [
+        {
+          "name": "Registry permissions",
+          "protocol": "openid-connect",
+          "protocolMapper": "subsoil-demo-registry-token",
+          "config": {
+            "registry": "http://localhost:5001",
+            "service": "zot"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "zot",
+      "protocol": "docker-v2",
+      "enabled": true,
+      "protocolMappers": [
+        {
+          "name": "Registry permissions",
+          "protocol": "docker-v2",
+          "protocolMapper": "subsoil-demo-docker-permissions",
+          "config": {}
+        }
+      ]
+    },
+    {
+      "clientId": "wrong-audience",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "wrong-audience-demo-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "defaultClientScopes": []
+    }
+  ],
+  "users": [
+    {
+      "username": "writer",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "writer-demo-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "repository:project/model:pull",
+        "repository:project/model:push",
+        "repository:reviews/model:pull",
+        "repository:reviews/model:push"
+      ],
+      "firstName": "Writer",
+      "lastName": "Demo",
+      "email": "writer@example.test",
+      "emailVerified": true
+    },
+    {
+      "username": "reader",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "reader-demo-password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "repository:project/model:pull"
+      ],
+      "firstName": "Reader",
+      "lastName": "Demo",
+      "email": "reader@example.test",
+      "emailVerified": true
+    },
+    {
+      "username": "service-account-demo-seed",
+      "enabled": true,
+      "serviceAccountClientId": "demo-seed",
+      "realmRoles": [
+        "repository:project/model:pull",
+        "repository:project/model:push",
+        "repository:reviews/model:pull",
+        "repository:reviews/model:push"
+      ]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "clientScope": "repository:project/model:pull",
+      "roles": [
+        "repository:project/model:pull"
+      ]
+    },
+    {
+      "clientScope": "repository:project/model:push",
+      "roles": [
+        "repository:project/model:push"
+      ]
+    },
+    {
+      "clientScope": "repository:reviews/model:pull",
+      "roles": [
+        "repository:reviews/model:pull"
+      ]
+    },
+    {
+      "clientScope": "repository:reviews/model:push",
+      "roles": [
+        "repository:reviews/model:push"
+      ]
+    },
+    {
+      "clientScope": "registry:catalog:read",
+      "roles": [
+        "repository:project/model:pull",
+        "repository:reviews/model:pull"
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ result
 result-*
 .direnv/
 *.ifc
+!demo/model.ifc
 *.ifczip
 *.sqlite*
 signing.key

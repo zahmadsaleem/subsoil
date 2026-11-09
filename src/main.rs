@@ -8,15 +8,12 @@ use std::{
 };
 use subsoil::{
     client::{Client, Reference},
-    registry::{self, Registry},
-    release,
+    registry, release,
+    service::{self, Service},
 };
 
 #[derive(Parser)]
-#[command(
-    version,
-    about = "Subsoil artifact exchange, scoped OCI client and local registry"
-)]
+#[command(version, about = "Subsoil application exchange workflow and OCI tools")]
 struct Cli {
     #[arg(long, global = true, default_value = "build/client-auth.json")]
     auth_file: PathBuf,
@@ -29,45 +26,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Serve a persistent single-instance OCI registry with optional public read access.
+    /// Serve browsing and Open with handoffs using an external OCI registry and authorization server.
     Serve {
-        #[arg(long, default_value = "build/registry")]
-        data: PathBuf,
+        #[arg(long)]
+        config: PathBuf,
         #[arg(long, default_value = "127.0.0.1:5000")]
         listen: SocketAddr,
-        /// External HTTPS origin (or loopback HTTP); required for non-loopback binding.
-        #[arg(long)]
-        public_url: Option<String>,
-        /// Allow a browser application's exact HTTPS (or loopback HTTP) origin; repeat per origin.
-        #[arg(long = "cors-origin")]
-        cors_origins: Vec<String>,
-        /// Public OAuth client ID to register for browser login.
-        #[arg(long, requires = "oauth_redirect_uris")]
-        oauth_client_id: Option<String>,
-        /// Exact callback URL for the registered client; repeat per origin.
-        #[arg(long = "oauth-redirect-uri", requires = "oauth_client_id")]
-        oauth_redirect_uris: Vec<String>,
-        /// JSON registrations for artifact profiles and external applications.
-        #[arg(long)]
-        applications: Option<PathBuf>,
-        /// Maximum lifetime of a share, in seconds.
-        #[arg(long, default_value_t = subsoil::auth::DEFAULT_SHARE_MAX_SECONDS)]
-        share_max_age: u64,
-    },
-    /// Manage local registry users and repository policies.
-    User {
-        #[command(subcommand)]
-        command: UserCommand,
-    },
-    /// Choose the folders and versions visitors can read without signing in.
-    Public {
-        #[command(subcommand)]
-        command: PublicCommand,
-    },
-    /// Manage independent, expiring share credentials in a local registry store.
-    Share {
-        #[command(subcommand)]
-        command: ShareCommand,
     },
     /// Obtain a scoped JWT through the OCI Bearer/token endpoint flow.
     Login {
@@ -136,13 +100,6 @@ enum Command {
         source: String,
         destination: String,
     },
-    /// Generate a real IFC, convert it and demonstrate two scoped registries.
-    Demo {
-        #[arg(long, default_value = "build/showcase")]
-        output: PathBuf,
-        #[arg(long)]
-        oras: Option<PathBuf>,
-    },
 }
 
 #[derive(Subcommand)]
@@ -196,110 +153,6 @@ enum RepoCommand {
 enum ListFormat {
     Text,
     Json,
-}
-
-#[derive(Subcommand)]
-enum UserCommand {
-    /// Import, inspect, or remove structured allow rules.
-    Grants {
-        #[command(subcommand)]
-        command: GrantCommand,
-    },
-    Add {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-        #[arg(long = "grant")]
-        grants: Vec<String>,
-        #[arg(long)]
-        password_stdin: bool,
-    },
-    Grant {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-        grant: String,
-    },
-}
-
-#[derive(Subcommand)]
-enum PublicCommand {
-    /// Replace public read access with a registry-bound JSON grant policy.
-    Set {
-        #[arg(long)]
-        data: PathBuf,
-        file: PathBuf,
-    },
-    /// List the public read rules configured in this registry store.
-    List {
-        #[arg(long)]
-        data: PathBuf,
-    },
-    /// Remove all public read access, including access through issued tokens.
-    Clear {
-        #[arg(long)]
-        data: PathBuf,
-    },
-}
-
-#[derive(Subcommand)]
-enum GrantCommand {
-    Set {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-        /// JSON policy document using the shared API grant shape.
-        file: PathBuf,
-    },
-    List {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-    },
-    Remove {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-        id: i64,
-    },
-}
-
-#[derive(Clone, Copy, ValueEnum)]
-enum Binding {
-    Snapshot,
-    Live,
-}
-
-#[derive(Subcommand)]
-enum ShareCommand {
-    /// Resolve a snapshot (default) or explicitly delegate a live policy. TTL is in seconds.
-    Create {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-        /// JSON policy document using the shared API grant shape.
-        #[arg(long)]
-        grants: PathBuf,
-        #[arg(long)]
-        ttl: u64,
-        #[arg(long, value_enum, default_value = "snapshot")]
-        binding: Binding,
-        #[arg(long)]
-        public_url: String,
-        #[arg(long, default_value_t = subsoil::auth::DEFAULT_SHARE_MAX_SECONDS)]
-        share_max_age: u64,
-    },
-    List {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-    },
-    Revoke {
-        #[arg(long)]
-        data: PathBuf,
-        username: String,
-        id: String,
-    },
 }
 
 fn password(stdin: bool) -> Result<String> {
@@ -368,146 +221,16 @@ fn shutdown_signal() -> Result<impl std::future::Future<Output = ()> + Send> {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Serve {
-            data,
-            listen,
-            public_url,
-            cors_origins,
-            oauth_client_id,
-            oauth_redirect_uris,
-            applications,
-            share_max_age,
-        } => {
-            let registry = Registry::open(data)?;
-            ensure!(share_max_age > 0, "Share maximum age must be positive");
-            registry
-                .share_max_age
-                .store(share_max_age, std::sync::atomic::Ordering::Relaxed);
-            if let Some(public_url) = public_url {
-                registry.set_public_url(&public_url)?;
-            }
-            if let Some(client_id) = oauth_client_id {
-                registry.oauth.configure(&client_id, &oauth_redirect_uris)?;
-            }
-            let mut origins = cors_origins;
-            if let Some(path) = applications {
-                let configuration = subsoil::applications::Applications::parse(&fs::read(path)?)?;
-                origins.extend(
-                    configuration
-                        .applications
-                        .iter()
-                        .flat_map(|app| app.cors_origins.iter().cloned()),
-                );
-                registry.configure_applications(configuration)?;
-            }
-            registry.set_cors_origins(&origins)?;
+        Command::Serve { config, listen } => {
+            let configuration = serde_json::from_slice(&fs::read(config)?)?;
+            let application = Service::new(configuration)?;
             let listener = registry::bind(listen).await?;
             eprintln!(
-                "OCI registry listening on http://{} (JWT authentication required)",
+                "Subsoil workflow listening on http://{} (files stored in Zot)",
                 listener.local_addr()?
             );
-            registry::serve_with_shutdown(listener, registry, shutdown_signal()?).await?;
+            service::serve_with_shutdown(listener, application, shutdown_signal()?).await?;
         }
-        Command::Public { command } => match command {
-            PublicCommand::Set { data, file } => {
-                let policy = subsoil::policy::GrantSet::parse(&fs::read(file)?)?;
-                Registry::open(data)?.auth.set_public_grants(&policy)?;
-                print(&policy)?;
-            }
-            PublicCommand::List { data } => {
-                print(&Registry::open(data)?.auth.public_grants()?)?;
-            }
-            PublicCommand::Clear { data } => {
-                Registry::open(data)?.auth.clear_public_grants()?;
-                print(&serde_json::json!({"public_access":false}))?;
-            }
-        },
-        Command::Share { command } => match command {
-            ShareCommand::Create {
-                data,
-                username,
-                grants,
-                ttl,
-                binding,
-                public_url,
-                share_max_age,
-            } => {
-                let registry = Registry::open(data)?;
-                registry.set_public_url(&public_url)?;
-                registry
-                    .share_max_age
-                    .store(share_max_age, std::sync::atomic::Ordering::Relaxed);
-                let policy = subsoil::policy::GrantSet::parse(&fs::read(grants)?)?;
-                let origin = reqwest::Url::parse(&public_url)?;
-                ensure!(
-                    policy.registry == origin.authority(),
-                    "Grant registry does not match the public URL"
-                );
-                let binding = match binding {
-                    Binding::Snapshot => subsoil::auth::ShareBinding::Snapshot,
-                    Binding::Live => subsoil::auth::ShareBinding::Live,
-                };
-                let created = registry
-                    .create_share(&username, &policy, ttl, binding)
-                    .await?;
-                let mut value = serde_json::to_value(&created)?;
-                value["url"] = format!(
-                    "{}/share#secret={}",
-                    public_url.trim_end_matches('/'),
-                    created.secret
-                )
-                .into();
-                print(&value)?;
-            }
-            ShareCommand::List { data, username } => {
-                print(&Registry::open(data)?.auth.list_shares(&username)?)?
-            }
-            ShareCommand::Revoke { data, username, id } => {
-                Registry::open(data)?.auth.revoke_share(&username, &id)?;
-                print(&serde_json::json!({"revoked":true}))?;
-            }
-        },
-        Command::User { command } => match command {
-            UserCommand::Grants { command } => match command {
-                GrantCommand::Set {
-                    data,
-                    username,
-                    file,
-                } => {
-                    let policy = subsoil::policy::GrantSet::parse(&fs::read(file)?)?;
-                    Registry::open(data)?.auth.set_grants(&username, &policy)?;
-                    print(&policy)?;
-                }
-                GrantCommand::List { data, username } => {
-                    print(&Registry::open(data)?.auth.list_grants(&username)?)?
-                }
-                GrantCommand::Remove { data, username, id } => {
-                    Registry::open(data)?.auth.remove_grant(&username, id)?;
-                    print(&serde_json::json!({"removed":id}))?;
-                }
-            },
-            UserCommand::Add {
-                data,
-                username,
-                grants,
-                password_stdin,
-            } => {
-                Registry::open(data)?.auth.add_user(
-                    &username,
-                    &password(password_stdin)?,
-                    &grants,
-                )?;
-                print(&serde_json::json!({"user":username,"grants":grants}))?;
-            }
-            UserCommand::Grant {
-                data,
-                username,
-                grant,
-            } => {
-                Registry::open(data)?.auth.grant(&username, &grant)?;
-                print(&serde_json::json!({"user":username,"grant":grant}))?;
-            }
-        },
         Command::Login {
             registry,
             username,
@@ -638,9 +361,6 @@ async fn main() -> Result<()> {
         } => {
             let client = Client::new(cli.auth_file, cli.plain_http)?;
             print(&serde_json::json!({"digest":client.copy(&source,&destination).await?}))?;
-        }
-        Command::Demo { output, oras } => {
-            print(&subsoil::demo::run(&output, oras.as_deref()).await?)?
         }
     }
     Ok(())
