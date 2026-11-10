@@ -6,12 +6,11 @@ accounts and signing keys live in Keycloak.
 
 ## Start the services
 
-Clone Subsoil and install Docker with Compose. Everything needed to build the
-demo is in this checkout. The viewer's Dockerfile fetches IFC Lite source from
-commit `e426ac9e5614a027367e6488e3debd29301953e6` in its production branch's
-history, verifies that revision, and applies `demo/ifc-lite/oci-handoff.patch`
-before building. The first build needs network access to GitHub and the package
-registries.
+Clone Subsoil and install Docker with Compose. The build configuration is in
+this checkout. The viewer's Dockerfile fetches the
+[`codex/open-artifact-receiver` branch of `zahmadsaleem/ifc-lite`](https://github.com/zahmadsaleem/ifc-lite/tree/codex/open-artifact-receiver)
+and compiles it in the build container. No separate IFC Lite checkout is needed.
+The first build needs network access to GitHub and the package registries.
 
 ```sh
 docker compose --profile viewer up --build -d
@@ -76,18 +75,23 @@ adaptations are test scaffolding; applications use public addresses directly.
 
 ## Update the viewer
 
-The production revision is pinned by `IFC_LITE_REVISION` in
-`demo/ifc-lite/Dockerfile`. The proposed handoff and publishing changes are kept
-as an inspectable source patch alongside it. The pin uses source compatible with
-the published WASM runtime. Docker checks the patch before applying it and stops
-the build if it no longer applies.
+The viewer follows the branch selected by `IFC_LITE_REF` in
+`demo/ifc-lite/Dockerfile`. Docker resolves that branch when building and uses
+the resolved commit for its source cache. Rebuild to include new branch commits:
 
-To update IFC Lite, select a production commit compatible with its published
-WASM runtime, update the pin, and regenerate the patch for that source revision.
-Preserve unrelated upstream changes.
-Rebuild the viewer and repeat the exchange checks and browser edit/publish/reopen
-workflow. Once the integration is in the selected production revision, remove
-the patch and its application step from the build.
+```sh
+docker compose --profile viewer up --build -d
+```
+
+The build log prints the source commit. To select another branch, tag, or a
+fixed commit, supply the build argument:
+
+```sh
+docker compose --profile viewer build --build-arg IFC_LITE_REF=<branch-tag-or-commit> viewer
+```
+
+After changing the source, repeat the exchange checks and browser
+edit/publish/reopen workflow.
 
 ## Persistence and reset
 

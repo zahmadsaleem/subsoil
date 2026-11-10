@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -7,14 +8,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && npm install --global --force pnpm@10.8.1
 WORKDIR /workspace
-ARG IFC_LITE_REVISION=e426ac9e5614a027367e6488e3debd29301953e6
-RUN git init . \
-    && git fetch --depth 1 https://github.com/LTplus-AG/ifc-lite.git "$IFC_LITE_REVISION" \
-    && git checkout --detach FETCH_HEAD \
-    && test "$(git rev-parse HEAD)" = "$IFC_LITE_REVISION"
-COPY oci-handoff.patch /tmp/oci-handoff.patch
-RUN git apply --check --whitespace=error /tmp/oci-handoff.patch \
-    && git apply --whitespace=error /tmp/oci-handoff.patch
+ARG IFC_LITE_REF=codex/open-artifact-receiver
+ADD --keep-git-dir=true https://github.com/zahmadsaleem/ifc-lite.git#${IFC_LITE_REF} /workspace/
+RUN git log -1 --oneline
 ENV VITE_REGISTRY_ENABLED=true
 ENV VITE_REGISTRY_CONNECTIONS='[{"name":"Demo files","registry":"http://localhost:5001","authorization_server":"http://localhost:8080/realms/subsoil","client_id":"ifc-lite"}]'
 RUN pnpm install --frozen-lockfile --ignore-scripts --store-dir /pnpm/store \

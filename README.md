@@ -21,9 +21,9 @@ Distribution token claims.
 ## Run the demonstration
 
 Clone this repository and install Docker with Compose. The viewer build fetches
-a pinned IFC Lite production revision and applies the included OCI handoff
-patch. No separate IFC Lite checkout is required. The first build needs network
-access to GitHub and the package registries.
+the `codex/open-artifact-receiver` branch from `zahmadsaleem/ifc-lite` and builds
+it in the container. No separate IFC Lite checkout is required. The first build
+needs network access to GitHub and the package registries.
 
 ```sh
 docker compose --profile viewer up --build -d
