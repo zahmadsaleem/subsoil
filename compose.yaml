@@ -59,9 +59,7 @@ services:
       subsoil: {condition: service_started}
   viewer:
     profiles: ["viewer"]
-    build:
-      context: ${IFC_LITE_CHECKOUT:-../../lt-plus/ifc-lite}
-      dockerfile: apps/viewer/Dockerfile.registry
+    build: ./demo/ifc-lite
     ports: ["127.0.0.1:3001:3000"]
     depends_on: [keycloak, registry]
 volumes:

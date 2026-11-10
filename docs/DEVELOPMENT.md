@@ -24,8 +24,11 @@ docker compose --profile viewer up --build -d
 docker compose --profile test run --rm smoke
 ```
 
-IFC Lite's guide, `docs/guide/local-registry.md` in its checkout, describes its
-connection configuration and corresponding application checks.
+The demo builds IFC Lite from pinned production source with the included
+`demo/ifc-lite/oci-handoff.patch`. No sibling checkout is used. See the
+[deployment guide](DEPLOYMENT.md#update-the-viewer) for updating that source and
+patch. IFC Lite's `docs/guide/local-registry.md` describes its connection
+configuration and corresponding application checks.
 
 ## Open with
 

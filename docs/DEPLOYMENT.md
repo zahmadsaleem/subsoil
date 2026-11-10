@@ -6,10 +6,12 @@ accounts and signing keys live in Keycloak.
 
 ## Start the services
 
-Install Docker with Compose. Place the IFC Lite checkout at
-`../../lt-plus/ifc-lite`, or set `IFC_LITE_CHECKOUT` to its absolute path. The
-checkout must contain the OCI handoff application changes and
-`apps/viewer/Dockerfile.registry`.
+Clone Subsoil and install Docker with Compose. Everything needed to build the
+demo is in this checkout. The viewer's Dockerfile fetches IFC Lite source from
+commit `e426ac9e5614a027367e6488e3debd29301953e6` in its production branch's
+history, verifies that revision, and applies `demo/ifc-lite/oci-handoff.patch`
+before building. The first build needs network access to GitHub and the package
+registries.
 
 ```sh
 docker compose --profile viewer up --build -d
@@ -71,6 +73,21 @@ Envoy rejects a genuine Keycloak token without the registry audience.
 The container check uses internal network addresses for connections while
 preserving the public issuer, callback and registry identifiers. These network
 adaptations are test scaffolding; applications use public addresses directly.
+
+## Update the viewer
+
+The production revision is pinned by `IFC_LITE_REVISION` in
+`demo/ifc-lite/Dockerfile`. The proposed handoff and publishing changes are kept
+as an inspectable source patch alongside it. The pin uses source compatible with
+the published WASM runtime. Docker checks the patch before applying it and stops
+the build if it no longer applies.
+
+To update IFC Lite, select a production commit compatible with its published
+WASM runtime, update the pin, and regenerate the patch for that source revision.
+Preserve unrelated upstream changes.
+Rebuild the viewer and repeat the exchange checks and browser edit/publish/reopen
+workflow. Once the integration is in the selected production revision, remove
+the patch and its application step from the build.
 
 ## Persistence and reset
 

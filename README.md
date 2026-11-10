@@ -20,9 +20,10 @@ Distribution token claims.
 
 ## Run the demonstration
 
-Docker Compose and an IFC Lite checkout are required. The default checkout path
-is `../../lt-plus/ifc-lite`; override it with `IFC_LITE_CHECKOUT` if necessary.
-Use the IFC Lite branch containing the OCI handoff receiver.
+Clone this repository and install Docker with Compose. The viewer build fetches
+a pinned IFC Lite production revision and applies the included OCI handoff
+patch. No separate IFC Lite checkout is required. The first build needs network
+access to GitHub and the package registries.
 
 ```sh
 docker compose --profile viewer up --build -d
