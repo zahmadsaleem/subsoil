@@ -13,7 +13,7 @@ use reqwest::{Method, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    auth::{private_file, Access},
+    credentials::{private_file, Access},
     registry::{atomic_write, MANIFEST_TYPE},
     release::{self, checked_path, digest, digest_hex, ARTIFACT_TYPE},
 };
@@ -308,7 +308,15 @@ impl Client {
                 continue;
             }
             let scope = scope.strip_prefix("repository:").unwrap_or(scope);
-            crate::auth::parse_grant(scope)?;
+            let (repository, actions) =
+                scope.rsplit_once(':').context("Use repository:pull,push")?;
+            crate::registry::valid_repo(repository)?;
+            ensure!(
+                actions
+                    .split(',')
+                    .all(|action| action == "pull" || action == "push"),
+                "Only pull and push are supported"
+            );
             realm
                 .query_pairs_mut()
                 .append_pair("scope", &format!("repository:{scope}"));

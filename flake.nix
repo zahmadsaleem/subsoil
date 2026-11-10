@@ -1,5 +1,5 @@
 {
-  description = "Subsoil artifact exchange and an authenticated local OCI registry";
+  description = "Subsoil application exchange over an independent OCI registry";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   outputs = { self, nixpkgs }:
     let
@@ -35,12 +35,8 @@
         let
           pkgs = import nixpkgs { inherit system; };
           package = packageFor system;
-          demo = pkgs.writeShellScriptBin "subsoil-showcase" ''
-            exec ${package}/bin/subsoil demo --oras ${pkgs.oras}/bin/oras "$@"
-          '';
         in {
-          default = { type = "app"; program = "${package}/bin/subsoil"; meta.description = "IFC artifacts and a scoped local OCI registry"; };
-          demo = { type = "app"; program = "${demo}/bin/subsoil-showcase"; meta.description = "Authenticated two-registry showcase with ORAS"; };
+          default = { type = "app"; program = "${package}/bin/subsoil"; meta.description = "Application handoffs and OCI exchange tools"; };
         });
       devShells = eachSystem (system:
         let pkgs = import nixpkgs { inherit system; };

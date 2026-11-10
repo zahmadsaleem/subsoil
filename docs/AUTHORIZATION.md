@@ -1,466 +1,89 @@
-# Access and sharing
+# Authorization across the exchange
 
-An account determines which files a person or application can use. The file
-browser calls these collections **folders** and their saved editions **versions**.
-The command line and API use the OCI terms **repositories**, **artifacts**, and
-**tags**. This guide uses those terms when describing the API and its policies.
+Identity and authorization belong to the authorization service. Subsoil does
+not maintain accounts, passwords, grant databases, or a local token issuer.
+The Compose demonstration uses Keycloak. Applications authorize independently
+and transfer registry content directly through Zot's public address.
 
-Each account has a JSON policy defining what it may read or publish. Browser
-sessions and share links inherit limits from that policy. OCI clients receive
-tokens for specific repositories, and the server checks their effective
-permissions on every request.
+## Login and permissions
 
-## Repository names and artifact identity
+Keycloak registers separate public clients for Subsoil's browser and IFC Lite.
+Their exact callbacks and browser origins are in `demo/keycloak/realm.json`.
+Browser login uses Authorization Code with PKCE S256. Tokens are obtained from
+Keycloak's ordinary OIDC token endpoint and use the normal OAuth response
+fields. Subsoil and IFC Lite do not require custom session or permission JSON.
 
-A repository is a collection of artifact versions, identified by a name such as
-`hospital-a/models/architecture`. The registry gives no special meaning to any
-component: `hospital-a` can be a project, organization, or another naming
-convention chosen by its owner. A policy can cover several such namespaces.
+The demonstration has two people:
 
-Repositories can contain models, drawings, reports, or other artifact profiles.
-The manifest's `artifactType` and its descriptors' media types describe the
-content. Applications decide which profiles they can interpret. The server
-accepts the OCI image-manifest envelope for arbitrary artifacts and supports
-native OCI 1.1 referrers. Publishing OCI indexes is outside its supported API.
-The experimental viewer opens supported IFC source artifacts.
-
-Within a repository, a tag names a published version and a digest identifies its
-exact manifest bytes. Tags are immutable, so publishing changed content requires
-a new tag. A digest reference identifies the same content regardless of its tags.
-
-### Reports and other attachments
-
-An application can publish a report or another artifact with an OCI `subject`
-descriptor naming the exact model manifest it concerns. The server acknowledges
-accepted subject links with `OCI-Subject`, including repeated publication of the
-same bytes. The subject uses a SHA-256 digest, media type, and nonnegative byte
-size. Its target need not exist in the repository yet; the link does not grant
-access to that target or prove the report's findings.
-
-`GET /v2/<repository>/referrers/<subject-digest>` returns an OCI image index of
-matching attachments in that repository. It requires `pull` access and includes
-only manifests the caller may read under their account, share, or public policy.
-Sharing a model alone does not automatically share its reports. Empty results
-return HTTP 200 with an empty `manifests` array, including when the subject has
-not been published. Invalid subject digests return HTTP 400.
-
-The optional `artifactType` query filters by artifact type, with
-`OCI-Filters-Applied: artifactType` in the response. A manifest without a nonempty
-artifact type uses its config media type. Each result includes the attachment's
-manifest digest, size, media type, artifact type, and declared annotations.
-Listings use digest order and accept `n` (1–1000, default 100) and `last`; follow
-the `Link` header for subsequent pages. Each link preserves the type filter.
-Discovery reads the stored manifests, so existing subject links remain
-discoverable after an upgrade or restart without rebuilding a separate index.
-It uses the same bounded repository-root discovery as access checks, with a
-32 MiB manifest-reading budget per page.
-
-Standard discovery is repository-local. Store a report alongside its model when
-apps need to find it from that model. An IDS file can come from another registry;
-the report should record its exact source and version separately. Applications
-define and interpret that report content. Subsoil does not search remote
-registries or automatically include attachments when copying a single release.
-
-## JSON grant policies
-
-Account policies and share requests use the same grant objects. A policy document
-binds those grants to one registry host and optional port:
-
-```json
-{
-  "version": 1,
-  "registry": "registry.example.com",
-  "grants": [
-    {
-      "repositories": ["hospital-a/**", "bridge-b/**"],
-      "tags": ["issued"],
-      "actions": ["pull"]
-    },
-    {
-      "repositories": ["hospital-a/models/*"],
-      "tags": ["review-*"],
-      "actions": ["pull", "push"]
-    }
-  ]
-}
-```
-
-The first rule allows reading the `issued` version in repositories below either
-namespace. The second allows reading and publishing `review-*` versions in direct
-children of `hospital-a/models`.
-
-A rule must match the repository, any tag restriction, and the requested action.
-Entries within a list are alternatives; matching rules add their permissions
-together. Requests without a matching allow rule are denied. There are no
-explicit deny rules, and the only supported actions are `pull` and `push`.
-
-Repository selectors contain names, not complete OCI references. Write a tag in
-`tags`, rather than appending `:issued` to a repository selector.
-
-| Repository selector | Matches |
-| --- | --- |
-| `hospital-a/models/architecture` | That exact repository |
-| `hospital-a/models/*` | Direct children of `hospital-a/models` |
-| `hospital-a/*/*` | Exactly two components below `hospital-a` |
-| `hospital-a/**` | Descendants at any depth, excluding `hospital-a` itself |
-| `hospital-a/**/*` | Descendants at any depth, excluding `hospital-a` itself |
-| `**` | Every repository |
-
-`*` matches within one component. A standalone `**` matches recursively across
-components; a trailing `/**` requires a descendant. Patterns remain anchored to
-the complete name, so `hospital-a/**` does not match `hospital-ab/model`.
-
-Tags support `*` within a tag: `["issued"]` selects one exact tag and
-`["review-*"]` selects matching version names. Omitting `tags` allows the whole
-repository, including untagged manifests. `"tags": ["*"]` allows named versions
-only. Empty selector or action lists are invalid; an empty top-level `grants`
-list removes all account permissions. Unknown fields and unsupported policy
-versions are rejected.
-
-## Enforcement and publication
-
-Repository tokens carry ordinary OCI repository/action scopes. Tag restrictions,
-approval limits, and share restrictions remain in the registry's policy layer;
-a token's repository scope alone does not override them.
-
-The registry applies those restrictions to tag reads, manifest reads by digest,
-and the blobs described by authorized manifests. Knowing a hidden artifact's
-digest does not grant access to it. Catalog and tag discovery expose only
-published content visible under the caller's policy.
-
-Uploads are bound to their account session or share authorization. A restricted
-writer can publish only to an allowed tag and must upload any referenced bytes
-it cannot already read. This prevents publishing a hidden blob under a readable
-tag merely by knowing its digest. Tag-restricted readers gain access to staged
-content only through an authorized published manifest.
-
-Publication enforces immutability atomically:
-
-- A new tag may point to a new or existing manifest digest.
-- Repeating the same tag and digest returns HTTP 201 and preserves the original
-  publication record.
-- A different digest at an existing tag returns HTTP 409 `DENIED`.
-
-Overwriting tags and deleting published content are not supported.
-
-## Account sessions and repository tokens
-
-Browser sign-in approves an account policy once, then obtains repository tokens
-as the application needs them:
-
-1. Fetch `GET /oauth/config` and use the advertised Authorization Code flow with
-   PKCE S256. Request `subsoil:session` and open the registry's own sign-in page.
-2. At consent, the registry captures the account's current rules. The resulting
-   session root credential has catalog access and returns those rules in the
-   token response's `permissions` field.
-3. Exchange that root for a token naming the concrete repository and actions.
-4. Send the repository token with artifact requests. Keep the root for token
-   exchange, catalog discovery, and share management.
-
-The configuration advertises `session_scope: "subsoil:session"` and
-`scoped_token_endpoint: "/token"`. An exchange looks like:
-
-```http
-GET /token?scope=repository:hospital-a/models/architecture:pull,push
-Authorization: Bearer <session-root>
-```
-
-The response contains the intersection of requested and permitted actions, using
-standard OCI scopes. Repository access tokens expire within 15 minutes and
-cannot mint further tokens. Their expiry is also bounded by the absolute
-session or share deadline.
-
-A session's effective permissions are bounded by both the consent-time policy
-and the account's current policy. Adding a rule or action requires another
-login and approval. Removing permission affects existing tokens too. An approved
-wildcard already includes future repositories matching that pattern.
-
-Tab sessions have an absolute eight-hour lifetime. Remembered sessions have a
-30-day lifetime and use a rotating `HttpOnly; SameSite=Strict` refresh cookie,
-with `Secure` on HTTPS. Refresh does not extend the original deadline or widen
-the approval. Applications keep access tokens in memory. Callback registration,
-cookie forwarding, and CORS configuration are covered in
-[DEPLOYMENT.md](DEPLOYMENT.md#application-login).
-
-Ordinary ORAS login, push, pull, and copy retain the standard Basic/Bearer
-challenge flow. `registry:catalog:read` grants listing only. The optional
-`subsoil:catalog:grants` extension additionally bundles concrete repository grants
-within the caller's approval and current account policy. It omits repository
-names outside that approval and does not expand wildcard rules into access.
-
-Repository and tag listings accept Distribution pagination parameters `n` (1–1000)
-and `last`, with a `Link` header for the next page. The optional Subsoil `q`
-parameter filters names by a case-insensitive substring before paging. Listing
-and search results include only authorized content. Tag requests without `n`
-retain the unpaged response.
-
-## Opening files in external applications
-
-Registered applications appear under **Open with…** when they support the
-selected version's profile. Profile registration determines compatibility;
-account and share policies determine access. The
-[development guide](DEVELOPMENT.md#register-applications-that-open-files)
-describes operator configuration and the `open-artifact/1` contract.
-
-Choose **Open with…** to view files or **Edit with…** to edit them, then select
-an application. A single compatible application opens directly. The launcher
-uses a fifteen-minute lifetime and derives save access in the source folder
-from the account or share policy. The receiving application owns Save As,
-destination choices, and version names; the registry checks each publication
-against the granted permissions.
-
-A launch pins the selected source manifest by digest. Viewing grants access to
-that manifest and its described files. Editing can also request permission to
-publish new versions to a chosen repository and tag pattern. Source reads and
-destination writes are separate rules: publication permission leaves other
-versions unreadable and preserves tag immutability. Opening a published result
-uses another authorized launch or an ordinary application connection.
-
-Account launches reuse the active registry login with an independent HttpOnly
-browser proof. Choosing an application through the registry's Open with or Edit
-with menu explicitly approves that application for the selected version and the
-displayed action's bounded access. The registry verifies that decision's origin,
-Explorer session, browser binding, source and publication permissions before
-issuing a one-time code. A copied Explorer token alone can grant only access
-within its existing approval; approving additional write access requires the
-password-authenticated browser proof or fresh sign-in.
-
-Requests prepared through other interfaces show the application's access for
-consent and reuse verified authentication. Applications can request
-`prompt=consent` to show that page or `prompt=login` to require fresh credentials.
-Missing or expired authentication uses the sign-in form. Switching accounts or
-changing browser authentication invalidates pending authentication reuse, while
-expired or revoked initiating sessions require a new launch. Browser identity
-markers carry a separate audience and no API permissions; account credential
-changes invalidate them.
-
-Share recipients continue to approve on the registry's page using the share's
-own browser proof. This requires the redeemed share root and stays within all
-of its existing permissions. A snapshot share opens its selected content for
-viewing; publishing requires a live share that already permits the destination.
-
-The application receives a request ID in its launch URL and starts Authorization
-Code with PKCE S256. The request ID alone grants no access. The single-use code
-is bound to the application, exact callback, and PKCE challenge. Access and
-refresh tokens arrive through the token response and stay in application memory.
-Launch sessions use rotating refresh tokens without remembered-login cookies.
-
-The chosen lifetime is between one second and eight hours, bounded further by
-the originating session or share's absolute deadline. Refresh preserves that
-deadline and the original permission ceiling. Removing account permissions or
-revoking a share affects issued launch tokens too. Signing out of the launched
-application revokes its own session through `/oauth/revoke`. Each registered
-application also has a separate remembered-login cookie for ordinary account
-connections; `/oauth/config?client_id=<id>` advertises its cookie name.
-
-## Public files
-
-Registry stores are private by default. A public read policy selects the
-folders and versions anyone can browse or receive without an account or share
-link. It uses the same JSON grant format as account policies, with `pull` as
-the only allowed action:
-
-```json
-{
-  "version": 1,
-  "registry": "registry.example.com",
-  "grants": [
-    {
-      "repositories": ["samples/**"],
-      "actions": ["pull"]
-    },
-    {
-      "repositories": ["project/model"],
-      "tags": ["issued"],
-      "actions": ["pull"]
-    }
-  ]
-}
-```
-
-This policy makes every published version in folders below `samples/` public,
-including future versions. In `project/model`, only `issued` and its files
-become public. Other versions stay private, including when someone knows their
-content digests. Uploaded files become available only when a public manifest
-references them. Public rules apply to any supported OCI artifact, regardless
-of its profile or media type.
-
-Save the policy as `public.json` and manage it locally:
-
-```sh
-subsoil public set --data /var/lib/subsoil public.json
-subsoil public list --data /var/lib/subsoil
-subsoil public clear --data /var/lib/subsoil
-```
-
-`set` replaces the public policy atomically and binds it to the registry host,
-as account policies do. Changes apply to a running registry; a restart is not
-required. Narrowing or clearing the policy immediately restricts access through
-tokens already issued. An empty top-level `grants` list also clears public
-access. The policy persists in the registry store, and backups include it.
-
-OCI clients receive a standard Bearer challenge and can obtain short-lived
-anonymous tokens from `/token`, scoped to the requested public repository and
-actions. A request for `pull,push` receives at most `pull`; public access never
-permits publishing, account login, session approval, or share management.
-Invalid supplied credentials are rejected rather than treated as an anonymous
-request. Anonymous catalog and tag listings include only published content
-visible under the public policy and retain the usual pagination and filtering.
-
-Visitors opening `/explore` without a session see **Public files** and can
-download files after their sizes and content fingerprints have been checked.
-Anonymous tokens stay in browser memory. **Sign in** switches to the files
-shared with an account and enables its registered application connections;
-signing out returns to public browsing. A registry without public rules keeps
-the sign-in screen. Public access does not change the configured CORS origins.
-
-## Expiring shares
-
-A share delegates a subset of an approved account policy to anyone holding its
-secret. It has its own identity, absolute expiry, and revocation record. Creating
-one requires an approved account session root; repository tokens and share
-guests cannot administer shares.
-
-The creator chooses how the share relates to repository content:
-
-| Binding | Content access | Actions |
+| Account | Password | File access |
 | --- | --- | --- |
-| `snapshot` (default) | Authorized manifest digests present at creation and their content | `pull` only |
-| `live` | Current and future content matching its grants | `pull`, `push`, or both |
+| `reader` | `reader-demo-password` | Receive files in `project/model` |
+| `writer` | `writer-demo-password` | Receive and publish in `project/model` and `reviews/model` |
 
-Snapshot shares pin content, so later artifacts do not become readable through
-them. Live publishing is an explicit delegation and still requires new version
-tags because publication remains immutable.
+Each repository action has an identically named realm role and optional client
+scope, such as `repository:project/model:pull` or
+`repository:project/model:push`. Keycloak's scope-role mappings remove client
+scopes the account cannot use. The demo mapper checks roles again and encodes
+the granted actions in the Distribution JWT `access` claim. Its Docker protocol
+mapper applies the same repository role checks to conventional OCI clients.
 
-### Create and manage a share
+Catalog browsing additionally requests `registry:catalog:read` and the concrete
+repository pull scopes. Catalog permission alone grants no repository reads.
+Zot uses the token's repository permissions to filter its catalog. Subsoil
+paginates those results for its Files page.
 
-Send the shared grant shape with a required TTL in seconds:
+The optional client scopes enumerate the demo's folders. Adding another folder
+requires its realm roles, client scopes and scope-role mappings, and the desired
+browser listing scope. This is an intentionally small demo policy adapter,
+not a general policy language or an authorization standard.
 
-```http
-POST /shares
-Authorization: Bearer <account-session-root>
-Content-Type: application/json
-```
+## What the standards cover
 
-```json
-{
-  "version": 1,
-  "registry": "registry.example.com",
-  "grants": [
-    {
-      "repositories": ["hospital-a/models/architecture"],
-      "tags": ["issued"],
-      "actions": ["pull"]
-    }
-  ],
-  "binding": "snapshot",
-  "ttl": 86400
-}
-```
+[OAuth 2.0](https://www.rfc-editor.org/rfc/rfc6749.html) defines the code and token
+exchange. [PKCE](https://www.rfc-editor.org/rfc/rfc7636.html) binds a code to its
+initiating client transaction. [Bearer token usage](https://www.rfc-editor.org/rfc/rfc6750.html)
+defines the Authorization header and challenge behavior. The
+[Distribution token specification](https://distribution.github.io/distribution/spec/auth/token/)
+and [JWT format](https://distribution.github.io/distribution/spec/auth/jwt/)
+define repository scopes and the registry's `access` claims. Those claim names
+are not a generic OAuth or JWT requirement.
 
-The registry checks the requested grants against both the creator's approved
-and current permissions. Delegation supports identical patterns, concrete
-narrowing, and literal namespace subtrees. Ambiguous glob containment is
-rejected. A snapshot must match existing authorized content.
+A handoff supplies a content locator. It grants no access, and `view`/`edit`
+intent is not authorization. Repository pull permission normally covers all
+readable versions in that repository. Tag- or digest-specific delegation is
+outside the portable contract demonstrated here.
 
-The response includes share metadata, its one-time secret, and a URL such as
-`https://registry.example.com/share#secret=<secret>`. Store or deliver that link
-securely: it is a credential. The registry persists only the secret's hash.
+## Validation and service boundaries
 
-| Endpoint | Purpose |
-| --- | --- |
-| `POST /shares` | Create a share and return its secret once |
-| `GET /shares` | List the creator's share metadata without secrets |
-| `POST /shares/{id}/revoke` | Immediately revoke an owned share |
+Keycloak signs tokens. Envoy, at the public Zot address, validates their
+signature, issuer, audience and time bounds using the public JWKS prepared from Keycloak. Zot
+validates its trusted signing certificate and enforces the repository actions.
+The extra gateway check is necessary for this pinned demo: Zot v2.1.23's
+traditional Bearer verifier does not itself enforce the configured issuer and
+audience. Zot has no host port; access from applications goes through Envoy.
 
-These endpoints require an account session root in the Authorization header;
-they do not use browser cookies. The default maximum lifetime is 30 days and
-can be configured with `serve --share-max-age <seconds>`. Each account may have
-at most 128 active shares.
+Subsoil forwards browser tokens only to its operator-configured private
+registry upstream. It cannot turn a token into broader access and exposes no
+OCI storage endpoint. The browser's access and refresh tokens remain in memory;
+only pending OAuth state and the PKCE verifier temporarily use session storage.
+Disconnecting the file browser clears its tokens. Keycloak manages the separate
+SSO session, so the next authorization may reuse that login.
 
-### Redeem and use a share
+IFC Lite authorizes the source for pull and a chosen destination for pull and
+push. The demo requests read access for publication because it checks whether a
+version name already exists. Denied permissions require the owner to grant
+access; changing a handoff or hiding a button cannot change server enforcement.
 
-A recipient sends the secret in a POST body:
+## Demonstration limits
 
-```http
-POST /shares/redeem
-Content-Type: application/json
-```
+Compose publishes local HTTP ports and includes known demo passwords. Keycloak
+runs in development mode. The initialization container snapshots the realm's
+current RSA signing certificate for Zot; the demo does not automate Zot's
+certificate reload after Keycloak key rotation. The initialization service also prepares Envoy’s JWKS snapshot, including Keycloak’s Docker key-ID aliases. Both verifiers need a refresh when the signing key rotates.
+These choices support a local demonstration and need deliberate deployment
+configuration for shared hosting.
 
-```json
-{"secret": "<share-secret>"}
-```
-
-Redemption returns a short-lived share root credential with `authorization_type`
-set to `"share"`, its grant policy in `permissions`, and the absolute expiry.
-Exchange that root at `/token` for concrete repository tokens using the same flow as an
-account session. Redemption can renew the root only until the share expires;
-it never extends the share's lifetime.
-
-The registry landing page removes the URL fragment before redemption. The
-experimental viewer also accepts the link in its registry address field, clears
-that input before redemption, and keeps credentials only in tab memory. Its
-share controls support creation and revocation. Viewer connections remain
-limited to the configured loopback registry.
-
-For ORAS, redeem the share and exchange its root first, then pass the repository
-token with `--header 'Authorization: Bearer <repository-token>'`. Access tokens
-belong in headers and share secrets in POST bodies, never query strings.
-
-### Expiry, revocation, and identity
-
-Signing out of the creator's account does not revoke an issued share. A guest's
-sign-out disconnects that client locally. Explicit revocation or absolute expiry
-ends share access, including access through tokens already issued for it.
-Current account restrictions continue to bound the share throughout its life.
-Share state and revocation survive server restart.
-
-Publications made through a share identify the publisher as `share:<id>` and
-record its creator separately. Authorized manifest responses expose
-`subsoil-registry-publisher`, `subsoil-registry-pushed-at`, `subsoil-registry-share-id`, and
-`subsoil-registry-created-by`. Publication records remain separate from immutable
-manifest bytes. Session and share token responses advertise the publisher and
-timestamp header names in the optional `publication_headers` object, with
-`publisher` and `pushed_at` keys. Clients can read those names without depending
-on the backend's product identity. These metadata fields are extensions to the
-token response, rather than standard OCI provenance.
-
-## Provisioning and deployment
-
-Manage accounts through the CLI, using the same JSON policy model as the API:
-
-```sh
-subsoil user add --data /var/lib/subsoil alice
-subsoil user grants set --data /var/lib/subsoil alice grants.json
-subsoil user grants list --data /var/lib/subsoil alice
-subsoil user grants remove --data /var/lib/subsoil alice 12
-```
-
-`set` atomically replaces an account's grants. Importing a policy binds the store
-to its registry host and optional port; startup rejects a different public
-origin. `user add --grant project/model:pull,push` and `user grant` are shortcuts
-for exact repository-wide rules.
-
-Shares can also be provisioned locally with the same policy document:
-
-```sh
-subsoil share create --data /var/lib/subsoil alice \
-  --grants share.json --ttl 86400 --public-url https://registry.example.com
-subsoil share list --data /var/lib/subsoil alice
-subsoil share revoke --data /var/lib/subsoil alice <share-id>
-```
-
-Local creation defaults to snapshot binding; use `--binding live` explicitly
-for live content or publishing. Operators must apply the deployment's lifetime
-limit when using the local `--share-max-age` option.
-
-Run one server instance per data directory and persist the entire store,
-including signing keys, policies, sessions, shares, and artifacts. The storage
-format is `subsoil-registry/2`; other experimental formats require a fresh
-store. See [DEPLOYMENT.md](DEPLOYMENT.md) for TLS, exact CORS origins, callback
-registration, login throttling, and persistent-volume setup.
-
-Authorization uses [OWASP's deny-by-default and every-request checks](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html).
-Token issuance uses the Distribution [requested/granted scope intersection](https://distribution.github.io/distribution/spec/auth/token/).
-The richer policy remains a registry extension; OCI repository scope syntax
-and ordinary client behavior remain standard.
+Issued tokens expire after five minutes. Removing a role changes newly issued
+tokens; the gateway and Zot can continue accepting an already-issued token
+until its expiry. An existing token is not an online permission lookup. See the
+[deployment guide](DEPLOYMENT.md) for services and verification.

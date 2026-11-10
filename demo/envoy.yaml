@@ -1,0 +1,59 @@
+static_resources:
+  listeners:
+    - name: registry
+      address: {socket_address: {address: 0.0.0.0, port_value: 8080}}
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: registry
+                route_config:
+                  name: registry
+                  virtual_hosts:
+                    - name: zot
+                      domains: ["*"]
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          allow_origin_string_match:
+                            - exact: http://localhost:3000
+                            - exact: http://localhost:3001
+                            - exact: http://localhost:5080
+                          allow_methods: GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS
+                          allow_headers: authorization,content-type,accept,content-range,range
+                          expose_headers: WWW-Authenticate,Location,Link,Docker-Content-Digest,Docker-Upload-UUID,Range,Content-Range
+                      routes:
+                        - match: {prefix: /}
+                          route: {cluster: zot, timeout: 120s}
+                http_filters:
+                  - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
+                  - name: envoy.filters.http.jwt_authn
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+                      providers:
+                        keycloak:
+                          issuer: http://localhost:8080/realms/subsoil
+                          audiences: [zot]
+                          forward: true
+                          local_jwks:
+                            filename: /config/jwks.json
+                      rules:
+                        - match: {prefix: /}
+                          requires:
+                            requires_any:
+                              requirements:
+                                - provider_name: keycloak
+                                - allow_missing: {}
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+  clusters:
+    - name: zot
+      type: STRICT_DNS
+      connect_timeout: 5s
+      load_assignment:
+        cluster_name: zot
+        endpoints: [{lb_endpoints: [{endpoint: {address: {socket_address: {address: zot, port_value: 5000}}}}]}]
