@@ -12,6 +12,10 @@ import urllib.request
 KEYCLOAK = "http://keycloak:8080"
 REALM = "/admin/realms/subsoil"
 REGISTRAR = "subsoil-registrar"
+BRANDING = {
+    "displayName": "Subsoil", "displayNameHtml": "Subsoil",
+    "loginTheme": "subsoil", "accountTheme": "subsoil",
+}
 
 
 def request(path, method="GET", data=None, token=None, form=False):
@@ -76,6 +80,7 @@ def configure():
             if not isinstance(smtp, dict) or not smtp.get("host") or not smtp.get("from"):
                 raise ValueError("smtp.json must set host and from")
 
+    realm = BRANDING.copy()
     if smtp:
         # Existing fixture accounts are managed by the demo and keep their login.
         for name in ("reader", "writer"):
@@ -85,7 +90,8 @@ def configure():
                     "email": name + "@fixtures.subsoil.invalid",
                     "emailVerified": True,
                 })
-        admin("", "PUT", {"registrationAllowed": True, "verifyEmail": True, "smtpServer": smtp})
+        realm.update(registrationAllowed=True, verifyEmail=True, smtpServer=smtp)
+    admin("", "PUT", realm)
 
     registrar = client(REGISTRAR)
     if not registrar:

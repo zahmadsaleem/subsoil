@@ -4,7 +4,9 @@ services:
     image: axllent/mailpit:v1.33.1
     ports: ["127.0.0.1:8025:8025"]
   keycloak:
-    build: ./demo/keycloak
+    build:
+      context: .
+      dockerfile: demo/keycloak/Dockerfile
     command: ["start-dev", "--features=docker", "--import-realm", "--hostname=http://localhost:8080", "--hostname-backchannel-dynamic=true"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin

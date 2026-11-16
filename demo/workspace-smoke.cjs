@@ -35,6 +35,11 @@ function tokenResponse(page) {
   return page.waitForResponse(reply => reply.url() === issuer + '/protocol/openid-connect/token' && reply.request().method() === 'POST');
 }
 
+async function checkTheme(page) {
+  await page.waitForFunction(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--subsoil-green').trim() === '#234f3c');
+}
+
 async function signUp(browser, label) {
   const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
   const page = await context.newPage();
@@ -42,7 +47,9 @@ async function signUp(browser, label) {
   const email = name + '@example.test';
   await page.goto(files + '/explore');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await checkTheme(page);
   await page.getByRole('link', { name: 'Register' }).click();
+  await checkTheme(page);
   const form = page.locator('#kc-register-form');
   await form.locator('#firstName').fill(label);
   await form.locator('#lastName').fill('Workspace');
@@ -127,6 +134,12 @@ async function main() {
     const alice = await signUp(browser, 'Alice');
     const bob = await signUp(browser, 'Bob');
     assert.notEqual(alice.repository, bob.repository);
+    const account = await fetch(issuer + '/account/');
+    assert.equal(account.status, 200);
+    const logo = (await account.text()).match(/"resourceUrl": "([^"]+)"/);
+    assert(logo, 'Keycloak supplied an account theme resource path');
+    const brand = await fetch(new URL(logo[1] + '/img/subsoil-logo.svg', issuer));
+    assert.equal(brand.headers.get('content-type'), 'image/svg+xml');
     await alice.page.getByText('Workspace apps', { exact: true }).click();
     const registration = alice.page.locator('#register-app');
     await registration.getByLabel('App name').fill('Text editor');
