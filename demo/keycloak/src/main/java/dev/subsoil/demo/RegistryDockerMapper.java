@@ -23,6 +23,7 @@ public final class RegistryDockerMapper extends DockerAuthV2ProtocolMapper imple
         token.getAccessItems().clear();
         String scopes = client.getNote(DockerAuthV2Protocol.SCOPE_PARAM);
         if (scopes == null) return token;
+        String workspace = WorkspaceAccess.repository(user.getUser());
         for (String scope : scopes.split(" ")) {
             String[] parts = scope.split(":", -1);
             if (parts.length != 3 || !parts[0].equals("repository") || !parts[1].matches("[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*")) continue;
@@ -30,7 +31,7 @@ public final class RegistryDockerMapper extends DockerAuthV2ProtocolMapper imple
             for (String action : parts[2].split(",")) {
                 if (!action.equals("pull") && !action.equals("push")) continue;
                 RoleModel role = session.getContext().getRealm().getRole("repository:"+parts[1]+":"+action);
-                if (role != null && user.getUser().hasRole(role)) actions.add(action);
+                if (parts[1].equals(workspace) || (role != null && user.getUser().hasRole(role))) actions.add(action);
             }
             if (!actions.isEmpty()) token.getAccessItems().add(new DockerAccess("repository:"+parts[1]+":"+String.join(",",actions)));
         }

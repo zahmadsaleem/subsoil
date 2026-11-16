@@ -14,6 +14,12 @@ on:
       - LICENSE
       - assets/brand/**
       - web/**
+      - examples/editor/**
+      - compose*.yaml
+      - deploy/**
+      - demo/*.py
+      - demo/*.cjs
+      - demo/*.yaml
       - demo/keycloak/**
 
 permissions:
@@ -21,6 +27,33 @@ permissions:
   packages: write
 
 jobs:
+  demo:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Start the demo and check OCI clients
+        run: |
+          docker compose up --build -d
+          docker compose --profile test run --rm smoke
+      - name: Check workspace signup and browser handoffs
+        run: |
+          npm install --prefix "$RUNNER_TEMP/subsoil-browser" --no-save playwright@1.65.1
+          node "$RUNNER_TEMP/subsoil-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          python3 -m http.server 5173 --bind 127.0.0.1 --directory examples/editor > "$RUNNER_TEMP/subsoil-starter.log" 2>&1 &
+          NODE_PATH="$RUNNER_TEMP/subsoil-browser/node_modules" node demo/workspace-smoke.cjs
+      - name: Show service status
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --tail 50 identity-init subsoil keycloak registry zot-init zot seed
+
   publish:
     runs-on: ubuntu-latest
     strategy:

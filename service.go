@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -22,9 +23,10 @@ const handoffProtocol = "oci-handoff/1"
 var static embed.FS
 
 type application struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	LaunchURL string `json:"launch_url"`
+	ID        string       `json:"id"`
+	Name      string       `json:"name"`
+	LaunchURL string       `json:"launch_url"`
+	Handles   []capability `json:"handles"`
 }
 
 type configuration struct {
@@ -41,6 +43,7 @@ type service struct {
 	upstream     string
 	issuerOrigin string
 	client       *http.Client
+	identity     *identity
 }
 
 var hostname = regexp.MustCompile(`(?i)^[a-z0-9][a-z0-9.-]*$`)
@@ -99,9 +102,12 @@ func newService(config configuration) (*service, error) {
 		if _, err := originURL(app.LaunchURL, false); err != nil {
 			return nil, fmt.Errorf("application %q: %w", app.ID, err)
 		}
+		if err := validateHandles(app.Handles); err != nil {
+			return nil, fmt.Errorf("application %q: %w", app.ID, err)
+		}
 	}
 
-	return &service{
+	s := &service{
 		config:       config,
 		upstream:     upstream.Scheme + "://" + upstream.Host,
 		issuerOrigin: issuer.Scheme + "://" + issuer.Host,
@@ -111,7 +117,14 @@ func newService(config configuration) (*service, error) {
 				return http.ErrUseLastResponse
 			},
 		},
-	}, nil
+	}
+	if file := os.Getenv("SUBSOIL_REGISTRAR_FILE"); file != "" {
+		s.identity, err = loadIdentity(file, s.client, config)
+		if err != nil {
+			return nil, fmt.Errorf("load workspace registrar: %w", err)
+		}
+	}
+	return s, nil
 }
 
 func (s *service) routes() http.Handler {
@@ -124,12 +137,17 @@ func (s *service) routes() http.Handler {
 	})
 	mux.HandleFunc("GET /readyz", s.ready)
 	mux.HandleFunc("GET /workflow/config", s.browserConfig)
+	mux.HandleFunc("POST /workspace", s.workspace)
+	mux.HandleFunc("GET /workspaces/{workspace}/apps", s.registeredApps)
+	mux.HandleFunc("POST /workspaces/{workspace}/apps", s.registeredApps)
+	mux.HandleFunc("DELETE /workspaces/{workspace}/apps/{app}", s.registeredApps)
 	mux.HandleFunc("GET /files/_catalog", s.catalog)
 	mux.HandleFunc("GET /files/{path...}", s.file)
 	mux.HandleFunc("GET /handoff/applications", s.applications)
 	mux.HandleFunc("POST /handoff/launches", s.launch)
 	mux.HandleFunc("GET /explore", s.asset("web/explorer.html", "text/html; charset=utf-8"))
 	mux.HandleFunc("GET /explore/app.js", s.asset("web/explorer.js", "text/javascript; charset=utf-8"))
+	mux.HandleFunc("GET /explore/workspace.js", s.asset("web/workspace.js", "text/javascript; charset=utf-8"))
 	mux.HandleFunc("GET /explore/style.css", s.asset("web/explorer.css", "text/css; charset=utf-8"))
 	mux.HandleFunc("GET /handoff/controls.js", s.asset("web/handoff_ui.js", "text/javascript; charset=utf-8"))
 	mux.HandleFunc("GET /handoff/controls.css", s.asset("web/handoff_ui.css", "text/css; charset=utf-8"))
@@ -155,10 +173,14 @@ func (s *service) asset(path, contentType string) http.HandlerFunc {
 }
 
 func (s *service) browserConfig(w http.ResponseWriter, _ *http.Request) {
+	scopes := s.config.Scopes
+	if s.identity != nil {
+		scopes = append(append([]string{}, scopes...), "openid", "workspace:read", "workspace:write")
+	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"registry": s.config.Registry, "handoff_protocol": handoffProtocol,
 		"authorization_server": s.config.AuthorizationServer, "client_id": s.config.ClientID,
-		"scopes": s.config.Scopes,
+		"scopes": scopes, "workspaces": s.identity != nil,
 	})
 }
 

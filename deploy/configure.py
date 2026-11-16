@@ -60,9 +60,6 @@ def main():
         if user["username"] in ("reader", "writer"):
             user["credentials"][0]["value"] = reader if user["username"] == "reader" else writer
 
-    envoy = (demo / "envoy.yaml").read_text()
-    envoy = envoy.replace("http://localhost:5080", files).replace("http://localhost:8080/realms/subsoil", issuer)
-
     env = {
         "FILES_HOST": args.files_host,
         "REGISTRY_HOST": args.registry_host,
@@ -77,7 +74,6 @@ def main():
         generated = staging / "config"
         generated.mkdir(mode=0o700)
         (generated / "subsoil.json").write_text(json.dumps(subsoil, indent=2) + "\n")
-        (generated / "envoy.yaml").write_text(envoy)
         imported = generated / "subsoil-realm.json"
         imported.write_text(json.dumps(realm, indent=2) + "\n")
         # Docker binds this file directly for Keycloak's unprivileged user.

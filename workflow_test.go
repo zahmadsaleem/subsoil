@@ -13,7 +13,7 @@ import (
 )
 
 func TestBrowseAndLaunch(t *testing.T) {
-	manifest := []byte(`{"schemaVersion":2,"layers":[]}`)
+	manifest := []byte(`{"schemaVersion":2,"artifactType":"application/vnd.subsoil.demo.notes.v1","layers":[]}`)
 	model := []byte("model bytes")
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.Header.Get("Authorization") != "Bearer reader" {
@@ -51,7 +51,8 @@ func TestBrowseAndLaunch(t *testing.T) {
 		AuthorizationServer: "https://auth.example.test/realms/subsoil",
 		ClientID:            "subsoil-browser",
 		Scopes:              []string{"repository:project/model:pull"},
-		Applications:        []application{{ID: "editor", Name: "Example Editor", LaunchURL: "https://app.example.test/open"}},
+		Applications: []application{{ID: "editor", Name: "Example Editor", LaunchURL: "https://app.example.test/open",
+			Handles: []capability{{notesType, []string{"view", "edit"}}}}},
 	}
 	server, err := newService(config)
 	if err != nil {

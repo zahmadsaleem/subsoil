@@ -24,8 +24,13 @@ for attempt in range(120):
         pathlib.Path('/config/jwks.json').write_text(json.dumps({'keys':jwks}))
         cert = key['x5c'][0]
         pathlib.Path('/config/public.pem').write_text('-----BEGIN CERTIFICATE-----\n'+'\n'.join(cert[i:i+64] for i in range(0,len(cert),64))+'\n-----END CERTIFICATE-----\n')
-        config={'distSpecVersion':'1.1.1','storage':{'rootDirectory':'/var/lib/zot'},'http':{'address':'0.0.0.0','port':'5000','auth':{'bearer':{'realm':PUBLIC_ISSUER + '/protocol/docker-v2/auth','service':'zot','cert':'/config/public.pem'}}},'log':{'level':'warn'}}
+        config={'distSpecVersion':'1.1.1','storage':{'rootDirectory':'/var/lib/zot','maxRepoBytes':67108864,'maxRepos':128},'http':{'address':'0.0.0.0','port':'5000','auth':{'bearer':{'realm':PUBLIC_ISSUER + '/protocol/docker-v2/auth','service':'zot','cert':'/config/public.pem'}}},'log':{'level':'warn'}}
         pathlib.Path('/config/zot.json').write_text(json.dumps(config))
+        if 'FILES_PUBLIC' in os.environ:
+            envoy = pathlib.Path('/demo/envoy.yaml').read_text()
+            envoy = envoy.replace('http://localhost:5080', os.environ['FILES_PUBLIC'])
+            envoy = envoy.replace('http://localhost:8080/realms/subsoil', PUBLIC_ISSUER)
+            pathlib.Path('/envoy/envoy.yaml').write_text(envoy)
         print('Configured Zot with the Keycloak realm public certificate.', flush=True)
         break
     except Exception as error:

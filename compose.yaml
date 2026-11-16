@@ -1,5 +1,8 @@
 name: subsoil-demo
 services:
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    ports: ["127.0.0.1:8025:8025"]
   keycloak:
     build: ./demo/keycloak
     command: ["start-dev", "--features=docker", "--import-realm", "--hostname=http://localhost:8080", "--hostname-backchannel-dynamic=true"]
@@ -10,6 +13,16 @@ services:
     volumes:
       - ./demo/keycloak/realm.json:/opt/keycloak/data/import/subsoil-realm.json:ro
       - keycloak-data:/opt/keycloak/data
+  identity-init:
+    image: python:3.14-slim
+    command: ["python", "/demo/configure-identity.py"]
+    environment:
+      KC_ADMIN_PASSWORD: admin-demo-password
+      LOCAL_DEMO: "true"
+    volumes:
+      - ./demo:/demo:ro
+      - identity:/identity
+    depends_on: [keycloak, mailpit]
   zot-init:
     image: python:3.14-slim
     command: ["python", "/demo/prepare-zot.py"]
@@ -37,8 +50,14 @@ services:
     build: .
     command: ["serve", "--config", "/demo/subsoil.json", "--listen", "0.0.0.0:5000"]
     ports: ["127.0.0.1:5080:5000"]
-    volumes: ["./demo/subsoil.json:/demo/subsoil.json:ro"]
-    depends_on: [registry]
+    environment:
+      SUBSOIL_REGISTRAR_FILE: /identity/registrar.json
+    volumes:
+      - ./demo/subsoil.json:/demo/subsoil.json:ro
+      - identity:/identity:ro
+    depends_on:
+      registry: {condition: service_started}
+      identity-init: {condition: service_completed_successfully}
   seed:
     image: python:3.14-slim
     command: ["python", "/demo/seed.py"]
@@ -58,6 +77,7 @@ services:
       seed: {condition: service_completed_successfully}
       subsoil: {condition: service_started}
 volumes:
+  identity:
   keycloak-data:
   zot-config:
   zot-data:
