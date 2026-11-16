@@ -26,23 +26,69 @@ docker compose --profile test run --rm smoke
 
 ## Register an application
 
-An empty `applications` list keeps the file browser in standalone mode.
-To offer **Open with…**, add an entry to Subsoil's configuration and restart
-the service:
+A workspace owner can use **Workspace apps** in Subsoil or send
+`POST /workspaces/<id>/apps` with their Subsoil browser token. Get the
+workspace ID and repository from `POST /workspace`, which seeds sample
+versions on the first visit. Register for the exact local developer origin
+`http://localhost:5173`:
 
 ```json
 {
-  "id": "example-editor",
-  "name": "Example editor",
-  "launch_url": "https://editor.example.org/open"
+  "name": "Project editor",
+  "redirect_uris": ["http://localhost:5173/"],
+  "launch_url": "http://localhost:5173/",
+  "handles": [
+    {"artifact_type": "application/vnd.subsoil.demo.notes.v1", "intents": ["view", "edit"]},
+    {"artifact_type": "application/vnd.subsoil.demo.checklist.v1+json", "intents": ["view", "edit"]},
+    {"artifact_type": "application/vnd.subsoil.demo.review.v1+json", "intents": ["view"]}
+  ]
 }
 ```
 
-Register the application's OAuth client with the authorization service using
-its exact callback URLs and browser origins. Give the client the relevant
-repository scopes. Browser apps also need their exact origins allowed by the
-registry gateway. In Compose, add those origins to Envoy's
-`allow_origin_string_match` and recreate the gateway container.
+On success the registrar returns the app ID, public OAuth client ID, issuer,
+registry URL, and workspace repository alongside the registration. Copy the
+app configuration into the app. The registrar sets the exact Keycloak web
+origin for its token request. Compose allows the developer origin at the
+registry gateway for OCI reads and uploads.
+
+List existing entries with `GET /workspaces/<id>/apps` and remove one with
+`DELETE /workspaces/<id>/apps/<app>`. Removing an app stops new sign-ins
+for that client. A registry token already issued expires on its usual schedule.
+An optional `launch_url` makes the app selectable in **Open with…**.
+
+Operator-configured apps can also be placed in the `applications` list for
+repositories outside the personal workspaces. Set their `id`, `name`,
+`launch_url`, and the same `handles` entries.
+
+## Try the starter editor
+
+Run this from the repository root:
+
+```sh
+python3 -m http.server 5173 --bind 127.0.0.1 --directory examples/editor
+```
+
+In Subsoil, open **Workspace apps**, enter a name, and register the default
+editor. Open `notes-v1` from **My workspace** using **Edit with…**.
+Paste the registration's configuration into **Connect to Subsoil** in the
+editor, sign in, edit the text, and push a new version. Refresh Subsoil to
+see it in the workspace. The same starter serves as a preview app at
+`http://localhost:5173/index.html`. Register that URL as both the callback
+and launch URL with just the `view` intent to see two choices in **Open with…**.
+
+To start a new app with a coding agent, copy this prompt:
+
+```text
+Build a browser app that opens and publishes versions in a Subsoil workspace.
+Read the handoff and artifact contract in
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/DEVELOPMENT.md
+and the permissions in
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/AUTHORIZATION.md.
+Use the workspace app registration settings and run on http://localhost:5173.
+Accept oci-handoff/1, authorize with PKCE S256, and fetch the file by digest.
+Offer Push to… and upload OCI blobs and a new manifest tag directly to Zot.
+Show the version in Subsoil and confirm that another workspace is denied.
+```
 
 ## Open with
 
@@ -77,10 +123,13 @@ refresh tokens. The application validates the object, checks the registry
 against its configured connections, removes the fragment from the address,
 and obtains its own authorization.
 
-Application selection requires no profile registry or content matching rule.
-Applications interpret OCI metadata and report unsupported formats themselves.
-The sample artifact has one `application/x-step` layer and an OCI empty config
-descriptor. Other file types use the same handoff format.
+Subsoil matches every app's declared artifact types against the top-level
+`artifactType` of the selected manifest. It offers the matching `view` and
+`edit` intents and rechecks the chosen app at launch. For example,
+`oras push --artifact-type application/vnd.subsoil.demo.notes.v1 …`
+sets the type used by the notes editor. The file's own media type is recorded
+in its layer descriptor, such as `text/plain` for `notes.txt`. The demo
+file package has one file layer and an OCI empty config descriptor.
 
 ## Authorization and push to
 
@@ -97,8 +146,10 @@ Follow the [OAuth security BCP](https://www.rfc-editor.org/rfc/rfc9700.html).
 Passwords belong on the authorization server's page. Applications keep access
 tokens in tab memory and send them only to the registry they authorize.
 
-For opening, request `repository:project/model:pull`. For publishing, the
-Keycloak demonstration requests these independently grantable scope values:
+Workspace browser apps request `openid workspace:read` for opening. Add
+`workspace:write` to publish a revision. Keycloak converts the workspace
+permissions into exact OCI repository actions for the registered client
+and signed-in owner. The shared IFC fixture uses concrete OAuth scopes:
 
 ```text
 repository:project/model:pull repository:project/model:push
@@ -142,7 +193,7 @@ tokens, accepts uploads, or stores registry content. Listing follows bounded
 OCI pagination and returns only the registry's authorized results.
 
 `GET /handoff/applications?repository=<name>&reference=<tag-or-digest>` lists
-registered applications after checking that the selected manifest is readable.
+matching applications after checking that the selected manifest is readable.
 `POST /handoff/launches` accepts `application_id`, `repository`, `reference`,
 and `intent`, resolves the manifest through Zot, and returns a `launch_url`
 containing the handoff fragment. These requests use the browser's registry token.

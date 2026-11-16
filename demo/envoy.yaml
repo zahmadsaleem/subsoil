@@ -18,6 +18,7 @@ static_resources:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
                           allow_origin_string_match:
                             - exact: http://localhost:5080
+                            - exact: http://localhost:5173
                           allow_methods: GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS
                           allow_headers: authorization,content-type,accept,content-range,range
                           expose_headers: WWW-Authenticate,Location,Link,Docker-Content-Digest,Docker-Upload-UUID,Range,Content-Range
@@ -45,6 +46,17 @@ static_resources:
                               requirements:
                                 - provider_name: keycloak
                                 - allow_missing: {}
+                  - name: envoy.filters.http.local_ratelimit
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+                      stat_prefix: registry_requests
+                      token_bucket: {max_tokens: 120, tokens_per_fill: 120, fill_interval: 1s}
+                      filter_enabled: {default_value: {numerator: 100, denominator: HUNDRED}}
+                      filter_enforced: {default_value: {numerator: 100, denominator: HUNDRED}}
+                  - name: envoy.filters.http.buffer
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.Buffer
+                      max_request_bytes: 4194304
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

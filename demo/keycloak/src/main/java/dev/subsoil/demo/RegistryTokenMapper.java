@@ -33,10 +33,28 @@ public final class RegistryTokenMapper extends AbstractOIDCProtocolMapper implem
             throw new ErrorResponseException("invalid_target", "Choose the registry configured for this client", jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
         }
         String scopes = client.getScopeString();
+        boolean workspaceBrowser = "true".equals(mapping.getConfig().get("workspaceBrowser"));
+        String workspaceBinding = mapping.getConfig().getOrDefault("workspaceRepository", "");
+        String workspace = WorkspaceAccess.repository(user.getUser());
+        boolean workspaceAllowed = !workspace.isEmpty() && (workspaceBrowser || workspace.equals(workspaceBinding));
+        if (!workspaceBinding.isEmpty() && !workspaceAllowed) {
+            throw new ErrorResponseException("invalid_grant", "Sign in with the account that owns this app's workspace",
+                    jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
+        }
         Map<String, Set<String>> repositories = new LinkedHashMap<>();
         Set<String> granted = new LinkedHashSet<>();
         boolean catalogRequested = false;
         for (String scope : scopes.split(" ")) {
+            if (scope.equals("workspace:read") || scope.equals("workspace:write")) {
+                if (workspaceAllowed) {
+                    repositories.computeIfAbsent(workspace, key -> new LinkedHashSet<>())
+                            .add(scope.equals("workspace:read") ? "pull" : "push");
+                    granted.add(scope);
+                    catalogRequested |= workspaceBrowser && scope.equals("workspace:read");
+                }
+                continue;
+            }
+            if (scope.startsWith("repository:") && !workspaceBinding.isEmpty()) continue;
             if (scope.equals("registry:catalog:read")) { catalogRequested = true; continue; }
             if (!scope.startsWith("repository:")) { if (!scope.isBlank()) granted.add(scope); continue; }
             String[] parts = scope.split(":", -1);
@@ -56,7 +74,7 @@ public final class RegistryTokenMapper extends AbstractOIDCProtocolMapper implem
             granted.add("repository:" + repository.getKey() + ":" + String.join(",", repository.getValue()));
             canRead |= repository.getValue().contains("pull");
         }
-        if (catalogRequested && canRead) {
+        if (catalogRequested && canRead && workspaceBinding.isEmpty()) {
             access.add(Map.of("type", "registry", "name", "catalog", "actions", List.of("*")));
             // Distribution catalog implementations use both of these established scope forms.
             access.add(Map.of("type", "repository", "name", "", "actions", List.of("pull")));
@@ -64,6 +82,9 @@ public final class RegistryTokenMapper extends AbstractOIDCProtocolMapper implem
         }
         token.getOtherClaims().put("access", access);
         token.addAudience(mapping.getConfig().getOrDefault("service", "zot"));
+        if (workspaceAllowed && workspaceBrowser) {
+            token.addAudience("subsoil-registrar");
+        }
         String result = String.join(" ", granted);
         token.setScope(result);
         return token;

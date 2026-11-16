@@ -14,6 +14,12 @@ on:
       - LICENSE
       - assets/brand/**
       - web/**
+      - examples/editor/**
+      - compose*.yaml
+      - deploy/**
+      - demo/*.py
+      - demo/*.cjs
+      - demo/*.yaml
       - demo/keycloak/**
 
 permissions:
@@ -21,6 +27,70 @@ permissions:
   packages: write
 
 jobs:
+  demo:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Start the demo and check OCI clients
+        run: |
+          docker compose up --build -d
+          docker compose --profile test run --rm smoke
+      - name: Check workspace signup and browser handoffs
+        run: |
+          npm install --prefix "$RUNNER_TEMP/subsoil-browser" --no-save playwright@1.65.1
+          node "$RUNNER_TEMP/subsoil-browser/node_modules/playwright/cli.js" install --with-deps chromium
+          python3 -m http.server 5173 --bind 127.0.0.1 --directory examples/editor > "$RUNNER_TEMP/subsoil-starter.log" 2>&1 &
+          NODE_PATH="$RUNNER_TEMP/subsoil-browser/node_modules" node demo/workspace-smoke.cjs
+      - name: Check the hosted HTTPS configuration
+        run: |
+          python3 deploy/configure.py --files-host files.subsoil.test --registry-host registry.subsoil.test --auth-host auth.subsoil.test
+          cat > "$RUNNER_TEMP/subsoil-Caddyfile" <<'EOF'
+          {
+            local_certs
+          }
+          import /etc/caddy/hosted.Caddyfile
+          EOF
+          cat > "$RUNNER_TEMP/subsoil-hosted-test.yaml" <<EOF
+          services:
+            edge:
+              volumes:
+                - $RUNNER_TEMP/subsoil-Caddyfile:/etc/caddy/Caddyfile:ro
+                - $PWD/deploy/Caddyfile:/etc/caddy/hosted.Caddyfile:ro
+            keycloak:
+              image: subsoil-demo-keycloak
+            subsoil:
+              image: subsoil-demo-subsoil
+          EOF
+          export SUBSOIL_IMAGE_TAG="$GITHUB_SHA"
+          hosted=(docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml -f "$RUNNER_TEMP/subsoil-hosted-test.yaml")
+          if ! "${hosted[@]}" up -d --no-build ||
+             ! seed=$("${hosted[@]}" ps --all --quiet seed) ||
+             [[ -z "$seed" ]] ||
+             [[ "$(timeout 180 docker wait "$seed")" != 0 ]]; then
+            "${hosted[@]}" logs --tail 50 identity-init subsoil keycloak registry zot-init zot seed edge
+            exit 1
+          fi
+          "${hosted[@]}" cp edge:/data/caddy/pki/authorities/local/root.crt "$RUNNER_TEMP/subsoil-test-ca.crt"
+          for check in 'files.subsoil.test/explore 200' 'files.subsoil.test/readyz 200' 'auth.subsoil.test/realms/subsoil/.well-known/openid-configuration 200' 'registry.subsoil.test/v2/ 401'; do
+            read -r endpoint expected <<<"$check"
+            host=${endpoint%%/*}
+            actual=$(curl --silent --show-error --cacert "$RUNNER_TEMP/subsoil-test-ca.crt" --resolve "$host:443:127.0.0.1" --output /dev/null --write-out '%{http_code}' "https://$endpoint")
+            echo "$endpoint returned $actual"
+            test "$actual" = "$expected"
+          done
+      - name: Show service status
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --tail 50 identity-init subsoil keycloak registry zot-init zot seed
+
   publish:
     runs-on: ubuntu-latest
     strategy:

@@ -23,6 +23,8 @@ window.SubsoilHandoffUI = async (container, credential, repository, reference, c
   }
   async function launch(app, intent) {
     const ticket = ++attempt;
+    const tab = window.open('about:blank', '_blank');
+    if (tab) tab.opener = null;
     busy(true);
     message.textContent = 'Opening…';
     try {
@@ -32,8 +34,14 @@ window.SubsoilHandoffUI = async (container, credential, repository, reference, c
         credentials: 'omit', cache: 'no-store' });
       if (!launched.ok) throw Error('Couldn’t open this app. Please try again.');
       const result = await launched.json();
-      if (current() && ticket === attempt) location.assign(result.launch_url);
+      if (current() && ticket === attempt) {
+        if (tab) {
+          tab.location.replace(result.launch_url);
+          message.textContent = 'Opened in a new tab.';
+        } else location.assign(result.launch_url);
+      } else tab?.close();
     } catch (error) {
+      tab?.close();
       if (current() && ticket === attempt) message.textContent = error instanceof TypeError
         ? 'Couldn’t connect. Check your connection and try again.' : error.message;
     } finally {

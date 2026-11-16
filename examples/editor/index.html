@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Workspace editor</title>
+  <link rel="stylesheet" href="editor.css">
+  <script src="editor.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Workspace editor</h1>
+    <p id="status" role="status">Open a file from Subsoil or paste a handoff link.</p>
+    <details id="settings">
+      <summary>Connect to Subsoil</summary>
+      <form id="connect">
+        <label>App configuration <textarea name="settings" rows="8" required
+          placeholder="Paste the configuration from Workspace apps"></textarea></label>
+        <button>Connect</button>
+      </form>
+    </details>
+    <form id="open">
+      <label>Handoff link <input name="link" required placeholder="Paste an Open with link"></label>
+      <button>Open file</button>
+    </form>
+    <button id="signin" hidden>Sign in to open</button>
+    <section id="file" hidden>
+      <label><span id="filename">File contents</span><textarea id="contents" rows="14" spellcheck="false"></textarea></label>
+      <form id="publish" hidden>
+        <label>Destination <select name="destination"><option value="workspace">My workspace</option></select></label>
+        <label>Version name <input name="tag" required placeholder="notes-v2" maxlength="128"></label>
+        <button>Push to workspace</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

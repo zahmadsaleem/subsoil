@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/explore/style.css">
   <link rel="stylesheet" href="/handoff/controls.css">
   <script src="/handoff/controls.js" defer></script>
+  <script src="/explore/workspace.js" defer></script>
   <script src="/explore/app.js" defer></script>
 </head>
 <body>
@@ -23,6 +24,20 @@
     <p id="status" role="status" aria-live="polite">Sign in to see your folders and files.</p>
     <button id="sign-in">Sign in</button>
     <noscript><p>Turn on JavaScript in your browser to see your files.</p></noscript>
+    <details id="workspace-apps" hidden>
+      <summary>Workspace apps</summary>
+      <ul id="registered-apps"></ul>
+      <form id="register-app">
+        <label>App name <input name="app_name" required maxlength="80" placeholder="Project editor"></label>
+        <label>Callback URL <input name="callback_url" type="url" required value="http://localhost:5173/"></label>
+        <label>Open with address <input name="launch_url" type="url" value="http://localhost:5173/"></label>
+        <label>Artifact types to view <input name="view_types" value="application/vnd.subsoil.demo.notes.v1, application/vnd.subsoil.demo.checklist.v1+json, application/vnd.subsoil.demo.review.v1+json"></label>
+        <label>Artifact types to edit <input name="edit_types" value="application/vnd.subsoil.demo.notes.v1, application/vnd.subsoil.demo.checklist.v1+json"></label>
+        <button type="submit">Register app</button>
+      </form>
+      <p id="app-status" role="status"></p>
+      <details id="app-config" hidden><summary>App configuration</summary><pre id="app-config-json"></pre></details>
+    </details>
     <div id="browser" class="browser" hidden>
       <section id="listing" aria-label="Your folders and versions">
         <div class="toolbar">

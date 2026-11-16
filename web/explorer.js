@@ -8,6 +8,8 @@
   const pageSize = 20;
   let session, renewing, configuration, metadata, selection = 0, nextCursor;
   let view = readView(), repositoryView, tagsView;
+  let workspace;
+  const folderName = repo => repo === workspace ? 'My workspace' : repo;
 
   function status(message, error = false) {
     $('status').textContent = message;
@@ -24,7 +26,8 @@
   }
 
   function forget() {
-
+    window.SubsoilWorkspace.disconnect();
+    workspace = undefined;
     session = undefined;
     tokens.clear();
     manifests.clear();
@@ -166,11 +169,11 @@
     const current = view;
     const publicView = session?.public;
     const title = publicView ? 'Public files' : 'Your files';
-    $('page-title').textContent = current.tag || current.repo || title;
-    $('page-caption').textContent = current.tag ? 'Files in ' + current.repo : current.repo ? 'Choose a version to see its files.' : publicView ? 'Browse files available to everyone. Sign in to see files shared with your account.' : 'Find files shared with you.';
-    document.title = (current.tag ? current.tag + ' · ' : '') + (current.repo || title) + ' · Subsoil';
+    $('page-title').textContent = current.tag || folderName(current.repo) || title;
+    $('page-caption').textContent = current.tag ? 'Files in ' + folderName(current.repo) : current.repo ? 'Choose a version to see its files.' : publicView ? 'Browse files available to everyone. Sign in to see files shared with your account.' : 'Find files shared with you.';
+    document.title = (current.tag ? current.tag + ' · ' : '') + (folderName(current.repo) || title) + ' · Subsoil';
     const crumbs = [link('Files', repositoryView || fresh())];
-    if (current.repo) crumbs.push(document.createTextNode('/'), link(current.repo, tagsView?.repo === current.repo ? tagsView : fresh(current.repo)));
+    if (current.repo) crumbs.push(document.createTextNode('/'), link(folderName(current.repo), tagsView?.repo === current.repo ? tagsView : fresh(current.repo)));
     if (current.tag) crumbs.push(document.createTextNode('/'), document.createTextNode(current.tag));
     $('breadcrumbs').replaceChildren(...crumbs);
     $('breadcrumbs').hidden = !current.repo;
@@ -212,7 +215,7 @@
         mark.className = 'repository-mark';
         mark.textContent = '▦';
         mark.setAttribute('aria-hidden', 'true');
-        name.textContent = repo;
+        name.textContent = folderName(repo);
         action.className = 'row-action';
         action.textContent = 'View versions →';
         anchor.append(mark, name, action);
@@ -372,7 +375,7 @@
     forget();
     status('Disconnected from these files. Your sign-in provider manages your account session.');
   });
-  $('refresh').onclick = () => { manifests.clear(); if (session?.public) { session.deadline = 0; tokens.clear(); } run(async () => { await root(); await renderView(); }); };
+  $('refresh').onclick = () => { manifests.clear(); if (session?.public) { session.deadline = 0; tokens.clear(); } run(async () => { await root(); await connectWorkspace(); await renderView(); }); };
   $('repositories-nav').onclick = event => { event.preventDefault(); navigate(fresh()); };
   $('search-form').onsubmit = event => {
     event.preventDefault();
@@ -381,6 +384,12 @@
   $('previous').onclick = () => navigate({ ...view, cursors: view.cursors.slice(0, -1) });
   $('next').onclick = () => { if (nextCursor) navigate({ ...view, cursors: [...view.cursors, nextCursor] }); };
   window.addEventListener('popstate', () => { view = readView(); if (session) run(renderView); });
+  window.addEventListener('subsoil-apps-changed', () => { if (view.tag) run(renderView); });
+  async function connectWorkspace() {
+    if (configuration?.workspaces && !workspace && !session?.public) {
+      workspace = await window.SubsoilWorkspace.connect(root);
+    }
+  }
   $('copy').onclick = () => run(async () => {
     try {
       await navigator.clipboard.writeText(new URL(viewUrl(fresh(view.repo, view.tag)), location.origin).href);
@@ -411,6 +420,7 @@
       view = pending.view || fresh();
     } else { signedIn(false); status('Sign in to see your folders and files.'); return; }
     history.replaceState({ explorer: view }, '', viewUrl(view));
+    await connectWorkspace();
     await renderView();
   });
 })();
