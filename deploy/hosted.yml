@@ -1,0 +1,124 @@
+---
+- name: Deploy Subsoil on a prepared VPS
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    subsoil_repository: https://github.com/zahmadsaleem/subsoil.git
+    subsoil_revision: main
+    subsoil_checkout: /root/subsoil
+    subsoil_compose:
+      - docker
+      - compose
+      - --env-file
+      - build/hosted/compose.env
+      - -f
+      - compose.hosted.yaml
+
+  tasks:
+    - name: Require the three public hostnames
+      ansible.builtin.assert:
+        that:
+          - subsoil_files_host | default('') | length > 0
+          - subsoil_registry_host | default('') | length > 0
+          - subsoil_auth_host | default('') | length > 0
+        fail_msg: Set subsoil_files_host, subsoil_registry_host, and subsoil_auth_host.
+
+    - name: Check out Subsoil
+      ansible.builtin.git:
+        repo: "{{ subsoil_repository }}"
+        dest: "{{ subsoil_checkout }}"
+        version: "{{ subsoil_revision }}"
+      register: subsoil_source
+
+    - name: Generate the hosted configuration and credentials on first run
+      ansible.builtin.command:
+        argv:
+          - python3
+          - deploy/configure.py
+          - --files-host
+          - "{{ subsoil_files_host }}"
+          - --registry-host
+          - "{{ subsoil_registry_host }}"
+          - --auth-host
+          - "{{ subsoil_auth_host }}"
+        chdir: "{{ subsoil_checkout }}"
+        creates: build/hosted/compose.env
+
+    - name: Match the requested hostnames to the existing deployment
+      ansible.builtin.command:
+        argv:
+          - grep
+          - -Fxq
+          - "{{ item.key }}={{ item.value | lower }}"
+          - build/hosted/compose.env
+        chdir: "{{ subsoil_checkout }}"
+      loop:
+        - key: FILES_HOST
+          value: "{{ subsoil_files_host }}"
+        - key: REGISTRY_HOST
+          value: "{{ subsoil_registry_host }}"
+        - key: AUTH_HOST
+          value: "{{ subsoil_auth_host }}"
+      register: hostname_check
+      changed_when: false
+      failed_when: false
+
+    - name: Require an explicit migration when hostnames change
+      ansible.builtin.assert:
+        that: hostname_check.results | map(attribute='rc') | reject('equalto', 0) | list | length == 0
+        fail_msg: Requested hostnames differ from build/hosted/compose.env. Preserve the existing credentials and migrate the endpoint configuration before retrying.
+
+    - name: Deploy the images for the checked-out commit
+      environment:
+        SUBSOIL_IMAGE_TAG: "{{ subsoil_source.after }}"
+      block:
+        - name: Validate the hosted Compose configuration
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['config', '--quiet'] }}"
+            chdir: "{{ subsoil_checkout }}"
+          changed_when: false
+
+        - name: Pull the hosted Compose images
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['pull', '--policy', 'always'] }}"
+            chdir: "{{ subsoil_checkout }}"
+
+        - name: Start the hosted Compose stack
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['up', '--no-build', '--pull', 'never', '-d'] }}"
+            chdir: "{{ subsoil_checkout }}"
+
+        - name: Wait for the sample version to be seeded
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['wait', 'seed'] }}"
+            chdir: "{{ subsoil_checkout }}"
+          changed_when: false
+          timeout: 180
+
+    - name: Verify the public endpoints over HTTPS
+      ansible.builtin.uri:
+        url: "{{ item.url }}"
+        status_code: "{{ item.status }}"
+        follow_redirects: none
+        timeout: 5
+      delegate_to: localhost
+      become: false
+      loop:
+        - url: "https://{{ subsoil_files_host }}/readyz"
+          status: 200
+        - url: "https://{{ subsoil_auth_host }}/realms/subsoil/.well-known/openid-configuration"
+          status: 200
+        - url: "https://{{ subsoil_registry_host }}/v2/"
+          status: 401
+      loop_control:
+        label: "{{ item.url }}"
+      register: subsoil_ready
+      until: subsoil_ready.status == item.status
+      retries: 24
+      delay: 5
+      tags: public_check
+
+    - name: Show the Files URL and the remote credentials path
+      ansible.builtin.debug:
+        msg: "Open https://{{ subsoil_files_host }}/explore. The generated passwords are on the VPS at {{ subsoil_checkout }}/build/hosted/accounts.txt."

@@ -60,16 +60,59 @@ an edited sample directly to Zot and checks that Subsoil lists the revision.
 `docker compose down --volumes` also removes identities, signing keys, files,
 and versions. The next startup reimports the local Keycloak realm.
 
-## Host on Hetzner Cloud
+## Host on a VPS
 
-Prepare one Ubuntu VM with an SSH key and the Docker Engine, Buildx, and
-Compose plugins. Allow TCP 80 and 443 in the Hetzner firewall and restrict
-SSH to your IP. Point three DNS names at the server for the file browser,
-registry, and sign-in issuer. Only publish IPv6 DNS records for an address
-configured and reachable on the VM.
+Prepare one VPS with SSH key access. Allow inbound TCP 80 and 443 and
+restrict SSH to your IP. Point three DNS names at the server for the file
+browser, registry, and sign-in issuer. Only publish IPv6 DNS records for an
+address configured and reachable on the VPS.
 
-Clone Subsoil on the VM. From its root, generate the hosted configuration
-with Python 3. Substitute your DNS names in this command:
+On an existing Debian 13 VPS, Ansible can install Docker Engine, Compose,
+Git, and Python over SSH. Subsoil's Nix dev shell includes
+Ansible Core. Run the playbook from your local Subsoil checkout with
+the VPS address, SSH account, and key:
+
+```sh
+nix develop -c ansible-playbook -i 'vps.example.org,' -u root \
+  --private-key ~/.ssh/id_ed25519 deploy/bootstrap.yml
+```
+
+The trailing comma makes the address an inline inventory. If Ansible is
+already installed locally, run the command starting at `ansible-playbook`.
+For a manual setup, follow the [Docker Engine installation guide for
+Debian](https://docs.docker.com/engine/install/debian/).
+
+The **Publish Deployment Images** workflow builds Subsoil and the Keycloak
+image with the registry token mapper for each commit on `main`. It publishes
+Linux amd64 and arm64 images to GitHub Container Registry (GHCR), tagged
+with the full commit SHA. Wait for both images to publish before deploying.
+After the first publish, set both packages to Public in
+[GitHub Packages](https://github.com/zahmadsaleem/subsoil/packages) so the VPS
+can pull them without a registry credential.
+
+From the same local checkout, deploy Subsoil with the three public hostnames:
+
+```sh
+nix develop -c ansible-playbook -i 'vps.example.org,' -u root \
+  --private-key ~/.ssh/id_ed25519 deploy/hosted.yml \
+  -e subsoil_files_host=files.example.org \
+  -e subsoil_registry_host=registry.example.org \
+  -e subsoil_auth_host=auth.example.org
+```
+
+The playbook checks out `main` under `/root/subsoil`, generates the hosted
+configuration on the first run, and pulls the images for the checked-out
+commit before starting Compose. It waits for the sample file and checks all
+three public endpoints over HTTPS. To deploy a specific tag or commit with
+published images, pass `-e subsoil_revision=<ref>`. Rerun the playbook with
+the same hostnames to apply an update with the existing credentials and
+volumes.
+
+### Manual deployment
+
+Clone Subsoil on the VM and check out a commit with published images. From
+its root, generate the hosted configuration with Python 3. Substitute your
+DNS names in this command:
 
 ```sh
 python3 deploy/configure.py \
@@ -84,11 +127,13 @@ the Compose environment. Keep that directory private and back it up.
 passwords. The Keycloak realm is imported on initial startup, so regenerating
 local files alone cannot rotate credentials in an existing database.
 
-Start Compose using the generated environment:
+Use the checked-out commit to select the images, then pull and start them:
 
 ```sh
+export SUBSOIL_IMAGE_TAG="$(git rev-parse HEAD)"
 docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml config --quiet
-docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml up --build -d
+docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml pull --policy always
+docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml up --no-build --pull never -d
 docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml ps -a
 ```
 

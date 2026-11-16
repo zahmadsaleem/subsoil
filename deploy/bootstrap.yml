@@ -1,0 +1,88 @@
+---
+- name: Prepare a Debian 13 host for Subsoil
+  hosts: all
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+    - name: Check Debian release and install Ansible's Python prerequisites if missing
+      ansible.builtin.raw: |
+        set -eu
+        . /etc/os-release
+        if [ "$ID" != debian ] || [ "${VERSION_CODENAME:-}" != trixie ]; then
+          echo "This playbook expects Debian 13 (Trixie)." >&2
+          exit 1
+        fi
+        if ! /usr/bin/python3 -c 'import apt' 2>/dev/null; then
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-apt
+          echo "Installed Ansible prerequisites."
+        fi
+      register: python_bootstrap
+      changed_when: "'Installed Ansible prerequisites.' in python_bootstrap.stdout_lines"
+
+  tasks:
+    - name: Install host prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - git
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Create the repository key directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Fetch Docker's repository signing key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        owner: root
+        group: root
+        mode: "0644"
+      register: docker_key
+
+    - name: Configure Docker's Debian repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/docker.sources
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: https://download.docker.com/linux/debian
+          Suites: trixie
+          Components: stable
+          Signed-By: /etc/apt/keyrings/docker.asc
+      register: docker_sources
+
+    - name: Install Docker Engine and Compose
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        update_cache: "{{ docker_key.changed or docker_sources.changed }}"
+        policy_rc_d: 101
+
+    - name: Start Docker and enable it at boot
+      ansible.builtin.systemd_service:
+        name: docker
+        state: started
+        enabled: true
+      tags: docker_daemon
+
+    - name: Check the Docker daemon
+      ansible.builtin.command: docker info
+      changed_when: false
+      tags: docker_daemon
+
+    - name: Check Compose
+      ansible.builtin.command: docker compose version
+      changed_when: false

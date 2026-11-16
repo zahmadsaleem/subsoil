@@ -29,7 +29,7 @@ services:
       retries: 20
     restart: unless-stopped
   keycloak:
-    build: ./demo/keycloak
+    image: ghcr.io/zahmadsaleem/subsoil-keycloak:${SUBSOIL_IMAGE_TAG:?Set SUBSOIL_IMAGE_TAG to a published commit SHA}
     command: ["start", "--features=docker", "--import-realm"]
     environment:
       KC_HOSTNAME: https://${AUTH_HOST:?Run deploy/configure.py first}
@@ -74,7 +74,7 @@ services:
     depends_on: [zot]
     restart: unless-stopped
   subsoil:
-    build: .
+    image: ghcr.io/zahmadsaleem/subsoil:${SUBSOIL_IMAGE_TAG:?Set SUBSOIL_IMAGE_TAG to a published commit SHA}
     volumes:
       - ./build/hosted/subsoil.json:/etc/subsoil/config.json:ro
     depends_on: [registry]
