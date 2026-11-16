@@ -1,0 +1,146 @@
+:root {
+    --subsoil-canvas: #f8faf8;
+    --subsoil-text: #182921;
+    --subsoil-border: #dce2d7;
+    --subsoil-green: #234f3c;
+    --subsoil-green-hover: #193f2e;
+    --subsoil-focus: #527a5b;
+    --pf-v5-global--FontFamily--text: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --pf-v5-global--FontFamily--heading: var(--pf-v5-global--FontFamily--text);
+    --pf-v5-global--Color--100: var(--subsoil-text);
+    --pf-v5-global--primary-color--100: var(--subsoil-green);
+    --pf-v5-global--primary-color--200: var(--subsoil-green-hover);
+    --pf-v5-global--active-color--100: var(--subsoil-focus);
+    --pf-v5-global--link--Color: #245840;
+    --pf-v5-global--link--Color--hover: var(--subsoil-green-hover);
+    --pf-v5-global--link--TextDecoration: underline;
+    --pf-v5-global--BorderRadius--sm: 6px;
+}
+
+:where(a, button, input, select):focus-visible {
+    outline: 2px solid var(--subsoil-focus);
+    outline-offset: 3px;
+}
+
+.login-pf body {
+    background: var(--subsoil-canvas);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.pf-v5-c-login {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 16px;
+}
+
+.pf-v5-c-login__container {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 420px);
+    gap: 20px;
+    padding: 0;
+}
+
+#kc-header {
+    padding: 0;
+    margin: 0;
+}
+
+#kc-header-wrapper {
+    width: 144px;
+    height: 36px;
+    background: url("../img/subsoil-logo.svg") center / contain no-repeat;
+    overflow: hidden;
+    text-indent: -9999px;
+}
+
+.pf-v5-c-login__main {
+    --pf-v5-c-login__main--BoxShadow: none;
+    align-self: stretch;
+    border: 1px solid var(--subsoil-border);
+    border-radius: 8px;
+    color: var(--subsoil-text);
+    overflow-wrap: anywhere;
+}
+
+.pf-v5-c-login__main-header,
+.pf-v5-c-login__main-body {
+    padding-inline: clamp(18px, 5vw, 28px);
+}
+
+.pf-v5-c-login__main-header {
+    border-top: 0;
+    padding-top: 24px;
+}
+
+#kc-page-title {
+    font-size: 27px;
+    font-weight: 550;
+    letter-spacing: -.8px;
+}
+
+.pf-v5-c-login__main-footer-band {
+    --pf-v5-c-login__main-footer-band--BackgroundColor: var(--subsoil-canvas);
+    border-radius: 0 0 8px 8px;
+}
+
+.pf-v5-c-form-control {
+    --pf-v5-c-form-control--before--BorderTopColor: #d4ddcf;
+    --pf-v5-c-form-control--before--BorderRightColor: #d4ddcf;
+    --pf-v5-c-form-control--before--BorderBottomColor: #d4ddcf;
+    --pf-v5-c-form-control--before--BorderLeftColor: #d4ddcf;
+    --pf-v5-c-form-control--focus--after--BorderBottomColor: var(--subsoil-focus);
+    border-radius: 6px;
+}
+
+.pf-v5-c-form-control::before {
+    border-radius: inherit;
+}
+
+.pf-v5-c-form-control:focus-within {
+    outline: 2px solid var(--subsoil-focus);
+    outline-offset: 2px;
+}
+
+.pf-v5-c-masthead {
+    --pf-v5-c-masthead--BackgroundColor: #fff;
+    --pf-v5-global--Color--100: var(--subsoil-text);
+    --pf-v5-global--Color--200: #52644f;
+    border-bottom: 1px solid var(--subsoil-border);
+}
+
+.pf-v5-c-masthead__brand img {
+    width: 144px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.pf-v5-c-masthead .pf-v5-c-button.pf-m-plain {
+    --pf-v5-c-button--m-plain--Color: var(--subsoil-text);
+    --pf-v5-c-button--m-plain--hover--Color: var(--subsoil-green);
+}
+
+.pf-v5-c-page {
+    --pf-v5-c-page--BackgroundColor: var(--subsoil-canvas);
+}
+
+.pf-v5-c-page__sidebar {
+    --pf-v5-c-page__sidebar--BackgroundColor: #fff;
+    --pf-v5-global--Color--100: var(--subsoil-text);
+    --pf-v5-global--Color--200: #52644f;
+}
+
+.pf-v5-c-page__sidebar .pf-v5-c-nav {
+    --pf-v5-c-nav__link--Color: var(--subsoil-text);
+    --pf-v5-c-nav__link--hover--Color: var(--subsoil-green);
+    --pf-v5-c-nav__link--focus--Color: var(--subsoil-green);
+    --pf-v5-c-nav__link--m-current--Color: var(--subsoil-green);
+    --pf-v5-c-nav__link--hover--BackgroundColor: var(--subsoil-canvas);
+    --pf-v5-c-nav__link--focus--BackgroundColor: var(--subsoil-canvas);
+    --pf-v5-c-nav__link--m-current--BackgroundColor: #edf1e8;
+    --pf-v5-c-nav__link--m-current--after--BorderColor: var(--subsoil-green);
+}
