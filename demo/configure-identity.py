@@ -58,6 +58,14 @@ def configure():
         found = admin("/clients?" + urllib.parse.urlencode({"clientId": name}))
         return next((item for item in found if item["clientId"] == name), None)
 
+    def ensure_subject(path, mappers):
+        if not any(item["protocolMapper"] == "oidc-sub-mapper" for item in mappers):
+            admin(path, "POST", {
+                "name": "Account subject", "protocol": "openid-connect",
+                "protocolMapper": "oidc-sub-mapper",
+                "config": {"access.token.claim": "true", "introspection.token.claim": "true"},
+            })
+
     smtp = None
     if os.getenv("LOCAL_DEMO") == "true":
         smtp = {"host": "mailpit", "port": "1025", "from": "demo@subsoil.test"}
@@ -104,7 +112,9 @@ def configure():
         admin(management_path + "/roles/manage-clients"),
     ])
     mapper_path = registrar_path + "/protocol-mappers/models"
-    if not any(mapper["name"] == "registrar client roles" for mapper in admin(mapper_path)):
+    mappers = admin(mapper_path)
+    ensure_subject(mapper_path, mappers)
+    if not any(mapper["name"] == "registrar client roles" for mapper in mappers):
         admin(mapper_path, "POST", {
             "name": "registrar client roles", "protocol": "openid-connect",
             "protocolMapper": "oidc-usermodel-client-role-mapper",
@@ -138,12 +148,7 @@ def configure():
     mapper = next(item for item in mappers if item["protocolMapper"] == "subsoil-demo-registry-token")
     mapper["config"]["workspaceBrowser"] = "true"
     admin(mapper_path + "/" + mapper["id"], "PUT", mapper)
-    if not any(item["protocolMapper"] == "oidc-sub-mapper" for item in mappers):
-        admin(mapper_path, "POST", {
-            "name": "Workspace account ID", "protocol": "openid-connect",
-            "protocolMapper": "oidc-sub-mapper",
-            "config": {"access.token.claim": "true", "introspection.token.claim": "true"},
-        })
+    ensure_subject(mapper_path, mappers)
 
     secret = admin(registrar_path + "/client-secret")["value"]
     temporary = Path("/identity/registrar.tmp")

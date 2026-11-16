@@ -230,10 +230,16 @@ func (s *service) createWorkspaceApp(w http.ResponseWriter, r *http.Request, own
 		"fullScopeAllowed": false, "redirectUris": registration.RedirectURIs, "webOrigins": []string{developerOrigin},
 		"defaultClientScopes": []string{}, "optionalClientScopes": []string{"workspace:read", "workspace:write"},
 		"attributes": app.Attributes,
-		"protocolMappers": []map[string]any{{
-			"name": "Registry repository permissions", "protocol": "openid-connect", "protocolMapper": "subsoil-demo-registry-token",
-			"config": map[string]string{"registry": i.registry, "service": "zot", "workspaceRepository": workspaceRepository(owner)},
-		}},
+		"protocolMappers": []map[string]any{
+			{
+				"name": "Registry repository permissions", "protocol": "openid-connect", "protocolMapper": "subsoil-demo-registry-token",
+				"config": map[string]string{"registry": i.registry, "service": "zot", "workspaceRepository": workspaceRepository(owner)},
+			},
+			{
+				"name": "Account subject", "protocol": "openid-connect", "protocolMapper": "oidc-sub-mapper",
+				"config": map[string]string{"access.token.claim": "true", "introspection.token.claim": "true"},
+			},
+		},
 	}, nil)
 	if errors.Is(err, errAppExists) {
 		writeJSON(w, http.StatusConflict, badRequest("An app with this name is already registered"))
