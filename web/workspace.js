@@ -67,6 +67,7 @@ window.SubsoilWorkspace = (() => {
           element('app-config').hidden = true;
           await list();
           message.textContent = 'App removed.';
+          window.dispatchEvent(new Event('subsoil-apps-changed'));
         }));
         return item;
       }));

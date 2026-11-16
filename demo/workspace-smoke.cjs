@@ -15,7 +15,7 @@ const review = 'application/vnd.subsoil.demo.review.v1+json';
 async function verifyEmail(page, email) {
   for (let tries = 0; tries < 30; tries++) {
     const inbox = await (await fetch('http://localhost:8025/api/v1/messages')).json();
-    const item = inbox.messages?.find(message => message.To.some(recipient => recipient.Address === email));
+    const item = inbox.messages?.find(message => message.To.some(recipient => recipient.Address.toLowerCase() === email));
     if (item) {
       const message = await (await fetch('http://localhost:8025/api/v1/message/' + item.ID)).json();
       const link = message.Text.match(/https?:\/\/[^\s<]+\/login-actions\/action-token\?[^\s<]+/);
@@ -27,7 +27,8 @@ async function verifyEmail(page, email) {
     }
     await new Promise(resolve => setTimeout(resolve, 500));
   }
-  assert.fail('No verification email arrived');
+  assert.fail('No verification email arrived at ' + new URL(page.url()).pathname +
+    ' (' + (await page.locator('h1').allTextContents()).join(' ') + ')');
 }
 
 function tokenResponse(page) {
@@ -37,7 +38,7 @@ function tokenResponse(page) {
 async function signUp(browser, label) {
   const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
   const page = await context.newPage();
-  const name = label + '-' + randomUUID().slice(0, 8);
+  const name = label.toLowerCase() + '-' + randomUUID().slice(0, 8);
   const email = name + '@example.test';
   await page.goto(files + '/explore');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -66,7 +67,7 @@ async function signUp(browser, label) {
     await update.locator('[type=submit]').click();
   }
   if (!page.url().startsWith(files + '/explore')) {
-    const heading = await page.locator('h1').first().textContent().catch(() => '');
+    const heading = (await page.locator('h1').allTextContents()).join(' ');
     console.log('Email confirmation returned to ' + new URL(page.url()).pathname + ' (' + heading.trim() + ').');
     await page.goto(files + '/explore');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
@@ -168,6 +169,7 @@ async function main() {
     assert.notEqual(mountResponse.status, 201, 'cross-workspace blob mount');
     assert(denied.includes((await http(registry, bobBase + '/blobs/' + layer, bob.token)).status));
     assert.equal((await http(files, '/workspaces/' + alice.id + '/apps', bob.token)).status, 403);
+    assert.equal((await http(files, '/workspaces/' + alice.id + '/apps', appToken)).status, 403);
     const request = new URLSearchParams({ service: 'zot', scope: 'repository:' + alice.repository + ':pull,push repository:' + bob.repository + ':pull,push' });
     const native = await fetch(issuer + '/protocol/docker-v2/auth?' + request, {
       headers: { Authorization: 'Basic ' + Buffer.from(bob.name + ':' + password).toString('base64') }
@@ -176,6 +178,9 @@ async function main() {
     const { token } = await native.json();
     assert(denied.includes((await http(registry, aliceBase + '/tags/list', token)).status));
     assert.equal((await http(registry, bobBase + '/tags/list', token)).status, 200);
+    const bobManifest = await (await http(registry, bobBase + '/manifests/notes-v1', token)).text();
+    assert.equal((await http(registry, bobBase + '/manifests/cli-v2', token, 'PUT', bobManifest,
+      { 'Content-Type': 'application/vnd.oci.image.manifest.v1+json' })).status, 201);
     console.log('Workspace boundaries held at the registry for both browser and OCI-native tokens.');
   } finally {
     await browser.close();
