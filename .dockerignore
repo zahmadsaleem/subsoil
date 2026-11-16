@@ -1,9 +1,10 @@
 *
-!Cargo.toml
-!Cargo.lock
+!go.mod
+!*.go
+*_test.go
 !LICENSE
-!src/
-!src/**
+!web/
+!web/**
 !assets/
 !assets/brand/
 !assets/brand/**

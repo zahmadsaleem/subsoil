@@ -6,7 +6,8 @@ result
 result-*
 .direnv/
 *.ifc
+!demo/model.ifc
 *.ifczip
 *.sqlite*
 signing.key
-client-auth.json
+/subsoil
