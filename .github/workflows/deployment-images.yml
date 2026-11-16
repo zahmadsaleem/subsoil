@@ -70,7 +70,10 @@ jobs:
           EOF
           export SUBSOIL_IMAGE_TAG="$GITHUB_SHA"
           hosted=(docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml -f "$RUNNER_TEMP/subsoil-hosted-test.yaml")
-          if ! "${hosted[@]}" up -d --no-build || ! timeout 180 "${hosted[@]}" wait seed; then
+          if ! "${hosted[@]}" up -d --no-build ||
+             ! seed=$("${hosted[@]}" ps --all --quiet seed) ||
+             [[ -z "$seed" ]] ||
+             [[ "$(timeout 180 docker wait "$seed")" != 0 ]]; then
             "${hosted[@]}" logs --tail 50 identity-init subsoil keycloak registry zot-init zot seed edge
             exit 1
           fi

@@ -89,11 +89,20 @@
             argv: "{{ subsoil_compose + ['up', '--no-build', '--pull', 'never', '-d'] }}"
             chdir: "{{ subsoil_checkout }}"
 
+        - name: Find the sample seed container
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['ps', '--all', '--quiet', 'seed'] }}"
+            chdir: "{{ subsoil_checkout }}"
+          register: subsoil_seed
+          changed_when: false
+          failed_when: subsoil_seed.rc != 0 or subsoil_seed.stdout_lines | length != 1
+
         - name: Wait for the sample version to be seeded
           ansible.builtin.command:
-            argv: "{{ subsoil_compose + ['wait', 'seed'] }}"
-            chdir: "{{ subsoil_checkout }}"
+            argv: ["docker", "wait", "{{ subsoil_seed.stdout | trim }}"]
+          register: subsoil_seed_exit
           changed_when: false
+          failed_when: subsoil_seed_exit.rc != 0 or subsoil_seed_exit.stdout | trim != '0'
           timeout: 180
 
     - name: Verify the public endpoints over HTTPS
