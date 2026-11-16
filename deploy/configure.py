@@ -73,11 +73,13 @@ def main():
         staging = pathlib.Path(directory)
         generated = staging / "config"
         generated.mkdir(mode=0o700)
-        (generated / "subsoil.json").write_text(json.dumps(subsoil, indent=2) + "\n")
+        subsoil_config = generated / "subsoil.json"
+        subsoil_config.write_text(json.dumps(subsoil, indent=2) + "\n")
         imported = generated / "subsoil-realm.json"
         imported.write_text(json.dumps(realm, indent=2) + "\n")
-        # Docker binds this file directly for Keycloak's unprivileged user.
-        # The enclosing directory keeps the original private on the host.
+        # Unprivileged containers read these files through their direct mounts.
+        # The enclosing directory keeps the originals private on the host.
+        subsoil_config.chmod(0o644)
         imported.chmod(0o644)
         env_file = generated / "compose.env"
         env_file.touch(mode=0o600)

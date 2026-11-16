@@ -1,12 +1,12 @@
 ---
 - name: Deploy Subsoil on a prepared VPS
   hosts: all
-  become: true
+  become: false
   gather_facts: false
   vars:
     subsoil_repository: https://github.com/zahmadsaleem/subsoil.git
     subsoil_revision: main
-    subsoil_checkout: /root/subsoil
+    subsoil_checkout: "{{ ansible_facts.user_dir }}/subsoil"
     subsoil_compose:
       - docker
       - compose
@@ -16,6 +16,10 @@
       - compose.hosted.yaml
 
   tasks:
+    - name: Find the operator and their home directory
+      ansible.builtin.setup:
+        gather_subset: ['!all', '!min', user]
+
     - name: Require the three public hostnames
       ansible.builtin.assert:
         that:
@@ -23,6 +27,34 @@
           - subsoil_registry_host | default('') | length > 0
           - subsoil_auth_host | default('') | length > 0
         fail_msg: Set subsoil_files_host, subsoil_registry_host, and subsoil_auth_host.
+
+    - name: Require a non-root deployment operator
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.user_uid != 0
+          - subsoil_checkout.startswith('/')
+        fail_msg: Connect as the deployment operator and use an absolute checkout path.
+
+    - name: Check whether this checkout already has hosted credentials
+      ansible.builtin.stat:
+        path: "{{ subsoil_checkout }}/build/hosted/compose.env"
+      register: subsoil_hosted_env
+
+    - name: Refuse to generate new credentials for an existing hosted project
+      when: not subsoil_hosted_env.stat.exists
+      block:
+        - name: Check for existing hosted volumes
+          ansible.builtin.command:
+            argv: [docker, volume, ls, --quiet, --filter, label=com.docker.compose.project=subsoil-hosted]
+          become: true
+          check_mode: false
+          changed_when: false
+          register: subsoil_existing_volumes
+
+        - name: Require the existing configuration with its volumes
+          ansible.builtin.assert:
+            that: subsoil_existing_volumes.stdout_lines | length == 0
+            fail_msg: Hosted volumes already exist. Use the matching checkout and credentials or reset the previous deployment deliberately.
 
     - name: Check out Subsoil
       ansible.builtin.git:
@@ -70,10 +102,12 @@
         fail_msg: Requested hostnames differ from build/hosted/compose.env. Preserve the existing credentials and migrate the endpoint configuration before retrying.
 
     - name: Deploy the images for the checked-out commit
+      become: true
       environment:
         SUBSOIL_IMAGE_TAG: "{{ subsoil_source.after }}"
       block:
         - name: Validate the hosted Compose configuration
+          become: false
           ansible.builtin.command:
             argv: "{{ subsoil_compose + ['config', '--quiet'] }}"
             chdir: "{{ subsoil_checkout }}"

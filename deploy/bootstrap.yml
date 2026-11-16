@@ -3,8 +3,21 @@
   hosts: all
   become: true
   gather_facts: false
+  vars:
+    subsoil_deploy_user: deploy
+    subsoil_deploy_public_key_file: "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh/id_ed25519.pub"
+    subsoil_deploy_public_key: "{{ lookup('ansible.builtin.file', subsoil_deploy_public_key_file) }}"
 
   pre_tasks:
+    - name: Validate the operator name and SSH public key
+      ansible.builtin.assert:
+        that:
+          - subsoil_deploy_user is match('^[a-z_][a-z0-9_-]{0,30}$')
+          - subsoil_deploy_user != 'root'
+          - subsoil_deploy_public_key.splitlines() | length == 1
+          - subsoil_deploy_public_key is match('^(ssh-|ecdsa-|sk-)\S+ +[A-Za-z0-9+/]+=*( |$)')
+        fail_msg: Supply a non-root operator name and a single OpenSSH public key.
+
     - name: Check Debian release and install Ansible's Python prerequisites if missing
       ansible.builtin.raw: |
         set -eu
@@ -27,8 +40,40 @@
         name:
           - ca-certificates
           - git
+          - sudo
         update_cache: true
         cache_valid_time: 3600
+
+    - name: Create the deployment operator
+      ansible.builtin.user:
+        name: "{{ subsoil_deploy_user }}"
+        shell: /bin/bash
+        create_home: true
+      register: subsoil_operator
+
+    - name: Prepare the operator's SSH directory
+      ansible.builtin.file:
+        path: "{{ subsoil_operator.home }}/.ssh"
+        state: directory
+        owner: "{{ subsoil_deploy_user }}"
+        mode: "0700"
+
+    - name: Authorize the operator's SSH key
+      ansible.builtin.lineinfile:
+        path: "{{ subsoil_operator.home }}/.ssh/authorized_keys"
+        line: "{{ subsoil_deploy_public_key }}"
+        create: true
+        owner: "{{ subsoil_deploy_user }}"
+        mode: "0600"
+
+    - name: Grant the operator sudo access for Ansible
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/subsoil-deploy
+        owner: root
+        group: root
+        mode: "0440"
+        validate: /usr/sbin/visudo -cf %s
+        content: "{{ subsoil_deploy_user }} ALL=(root) NOPASSWD: ALL\n"
 
     - name: Create the repository key directory
       ansible.builtin.file:
