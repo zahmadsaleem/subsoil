@@ -2,6 +2,8 @@
 import hashlib, json, os, pathlib, time, urllib.error, urllib.parse, urllib.request
 REGISTRY=os.getenv('REGISTRY_URL','http://registry:8080')
 ISSUER=os.getenv('KEYCLOAK_URL','http://keycloak:8080/realms/subsoil')
+PUBLIC_REGISTRY=os.getenv('REGISTRY_PUBLIC','http://localhost:5001')
+SEED_SECRET=os.getenv('SEED_SECRET','demo-seed-secret')
 def request(url, method='GET', body=None, token=None, content_type=None):
     headers={}
     if token: headers['Authorization']='Bearer '+token
@@ -9,7 +11,7 @@ def request(url, method='GET', body=None, token=None, content_type=None):
     return urllib.request.urlopen(urllib.request.Request(url, data=body, method=method, headers=headers), timeout=10)
 def sha(data): return 'sha256:'+hashlib.sha256(data).hexdigest()
 def login():
-    fields=urllib.parse.urlencode({'grant_type':'client_credentials','client_id':'demo-seed','client_secret':'demo-seed-secret','scope':'repository:project/model:pull repository:project/model:push','resource':'http://localhost:5001'}).encode()
+    fields=urllib.parse.urlencode({'grant_type':'client_credentials','client_id':'demo-seed','client_secret':SEED_SECRET,'scope':'repository:project/model:pull repository:project/model:push','resource':PUBLIC_REGISTRY}).encode()
     with request(ISSUER+'/protocol/openid-connect/token', 'POST',fields, content_type='application/x-www-form-urlencoded') as response: return json.load(response)['access_token']
 def upload(data, token):
     with request(REGISTRY+'/v2/project/model/blobs/uploads/', 'POST', b'', token) as response: location=response.headers['Location']
@@ -26,11 +28,18 @@ for attempt in range(120):
     except (urllib.error.URLError, OSError) as error:
         if attempt==119: raise
         time.sleep(1)
+try:
+    with request(REGISTRY+'/v2/project/model/manifests/issued', token=token):
+        print('Keeping the existing project/model:issued version.', flush=True)
+        raise SystemExit(0)
+except urllib.error.HTTPError as error:
+    if error.code != 404:
+        raise
 source=pathlib.Path('/demo/model.ifc').read_bytes(); config=b'{}'
 for data in [config,source]: upload(data,token)
-manifest=json.dumps({'schemaVersion':2,'mediaType':'application/vnd.oci.image.manifest.v1+json','artifactType':'application/vnd.ifc-lite.ifc.v1',
+manifest=json.dumps({'schemaVersion':2,'mediaType':'application/vnd.oci.image.manifest.v1+json','artifactType':'application/vnd.subsoil.file.v1',
  'config':{'mediaType':'application/vnd.oci.empty.v1+json','digest':sha(config),'size':len(config)},
  'layers':[{'mediaType':'application/x-step','digest':sha(source),'size':len(source),'annotations':{'org.opencontainers.image.title':'model.ifc'}}],
  'annotations':{'org.opencontainers.image.title':'Example building model'}},separators=(',',':')).encode()
 with request(REGISTRY+'/v2/project/model/manifests/issued','PUT',manifest,token,'application/vnd.oci.image.manifest.v1+json') as response: assert response.status==201
-print('Published project/model:issued to Zot. Open http://localhost:5080/explore and sign in as writer or reader.',flush=True)
+print('Published project/model:issued to Zot.', flush=True)

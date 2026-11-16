@@ -1,69 +1,45 @@
 <h1><picture><source media="(prefers-color-scheme: dark)" srcset="assets/brand/subsoil-logo-chalk.svg"><img src="assets/brand/subsoil-logo.svg" alt="Subsoil" width="280"></picture></h1>
 
-Subsoil demonstrates information exchange between independent applications:
-find a file version, **Open with…** an application, edit it, and **Push to…** a
-chosen file store. Its proposed OCI handoff contract connects the experience
-to standard OAuth authorization and OCI transfer.
+Subsoil is an example common data environment (CDE) built on an OCI registry.
+Use it to browse folders, inspect versions, download files, and open a selected
+version with a registered application. External apps publish new versions
+directly to the registry.
 
 | Component | Responsibility |
 | --- | --- |
-| Zot | Manifests, files, versions, uploads, downloads, and storage management |
-| Subsoil | File/version browsing, application selection, and handoffs |
-| Keycloak | Login, account permissions, and registry access tokens |
-| IFC Lite | Opening and editing IFC models, selecting a destination, and publishing |
-
-IFC Lite transfers content directly through Zot's public address. Subsoil reads
-Zot for its file browser and never stores manifests or file content. A small
-Envoy gateway validates token issuer and audience; Zot enforces repository
-permissions. The demo's Keycloak mapper expresses authorized OAuth scopes as
-Distribution token claims.
+| Subsoil | File and version browsing, downloads, and application handoffs |
+| Zot | OCI manifests, file storage, and repository permissions |
+| Keycloak | Sign-in and repository access tokens |
+| Envoy | Token validation at the public registry address |
 
 ## Run the demonstration
 
-Clone this repository and install Docker with Compose. The viewer build fetches
-the `codex/open-artifact-receiver` branch from `zahmadsaleem/ifc-lite` and builds
-it in the container. No separate IFC Lite checkout is required. The first build
-needs network access to GitHub and the package registries.
+Clone this repository and start the local Docker Compose stack:
 
 ```sh
-docker compose --profile viewer up --build -d
+docker compose up --build -d
 ```
 
 Open [Subsoil Files](http://localhost:5080/explore). Sign in as `writer` with
-`writer-demo-password`, choose `project/model` and `issued`, then choose
-**Open with…** or **Edit with… → IFC Lite**. Authorize the application on
-Keycloak. IFC Lite receives the selected version directly from Zot.
+`writer-demo-password`, open `project/model`, and choose the `issued` version.
+Download `model.ifc` to get the original file. The `reader` account
+(`reader-demo-password`) can browse and download from this folder.
 
-Edit the model, open **File → Cloud Sources → Push to…**, choose a folder and a
-fresh version name, and publish. **Open saved version** opens the exact saved
-content in another viewer tab. Refresh Subsoil's versions to see the result.
-The `reader` account, password `reader-demo-password`, can open `project/model`
-but cannot publish. `writer` can also publish in `reviews/model`.
-
-The Compose deployment uses local HTTP and known demonstration credentials.
-The [deployment guide](docs/DEPLOYMENT.md) explains its services, persistence,
-ports, and reset behavior. An existing local IFC Lite development server can
-be used by starting Compose without `--profile viewer`.
-Set its application launch URL in `demo/subsoil.json` to that server's
-`/open-artifact` address and restart Subsoil. The container viewer uses port 3001.
-
-## Verify the exchange
+Publish a revision with ORAS or another OCI client against
+`localhost:5001/project/model`. Refresh Subsoil to see the new version.
+The [deployment guide](docs/DEPLOYMENT.md#publish-a-version) walks through the
+exchange and shows how to run the HTTPS stack on a single server.
 
 ```sh
 docker compose --profile test run --rm smoke
 ```
 
-This exercises real Keycloak PKCE login, permission downscoping, Zot transfers,
-reader write denial, immutable handoff references, publication and reopening,
-Subsoil's updated version listing, and audience rejection at the gateway.
+The smoke test checks sign-in, reader permissions, direct registry transfers,
+and whether Subsoil can browse a version published by another client. The Go
+service uses only the standard library and serves the bundled browser UI.
 
-The [development guide](docs/DEVELOPMENT.md) defines the proposed handoff and
-application integration. [Authorization](docs/AUTHORIZATION.md) explains how
-permissions cross the components.
-
-The command-line tools can inspect, receive, copy, and publish OCI artifacts.
-IFC conversion to Parquet and GLB remains an optional tool capability; the
-open/edit/publish demonstration exchanges original IFC STEP files directly.
-Conversion is experimental and is not buildingSMART approved.
+The [development guide](docs/DEVELOPMENT.md) describes registering external
+applications and the proposed OCI handoff format. [Authorization](docs/AUTHORIZATION.md)
+explains how permissions cross services.
 
 Licensed under the [Apache License 2.0](LICENSE).

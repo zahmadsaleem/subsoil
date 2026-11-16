@@ -1,0 +1,96 @@
+name: subsoil-hosted
+services:
+  edge:
+    image: caddy:2.11-alpine
+    environment:
+      FILES_HOST: ${FILES_HOST:?Run deploy/configure.py first}
+      REGISTRY_HOST: ${REGISTRY_HOST:?Run deploy/configure.py first}
+      AUTH_HOST: ${AUTH_HOST:?Run deploy/configure.py first}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?Run deploy/configure.py first}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  keycloak:
+    build: ./demo/keycloak
+    command: ["start", "--features=docker", "--import-realm"]
+    environment:
+      KC_HOSTNAME: https://${AUTH_HOST:?Run deploy/configure.py first}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:?Run deploy/configure.py first}
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?Run deploy/configure.py first}
+    volumes:
+      - ./build/hosted/subsoil-realm.json:/opt/keycloak/data/import/subsoil-realm.json:ro
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: unless-stopped
+  zot-init:
+    image: python:3.14-slim
+    command: ["python", "/demo/prepare-zot.py"]
+    environment:
+      ISSUER_PUBLIC: https://${AUTH_HOST:?Run deploy/configure.py first}/realms/subsoil
+    volumes:
+      - ./demo:/demo:ro
+      - zot-config:/config
+    depends_on: [keycloak]
+  zot:
+    image: ghcr.io/project-zot/zot:v2.1.23
+    command: ["serve", "/config/zot.json"]
+    volumes:
+      - zot-config:/config:ro
+      - zot-data:/var/lib/zot
+    depends_on:
+      zot-init: {condition: service_completed_successfully}
+    restart: unless-stopped
+  registry:
+    image: envoyproxy/envoy:v1.36.4
+    command: ["envoy", "-c", "/etc/envoy/envoy.yaml", "--log-level", "warn"]
+    volumes:
+      - ./build/hosted/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - zot-config:/config:ro
+    depends_on: [zot]
+    restart: unless-stopped
+  subsoil:
+    build: .
+    volumes:
+      - ./build/hosted/subsoil.json:/etc/subsoil/config.json:ro
+    depends_on: [registry]
+    restart: unless-stopped
+  seed:
+    image: python:3.14-slim
+    command: ["python", "/demo/seed.py"]
+    environment:
+      REGISTRY_PUBLIC: https://${REGISTRY_HOST:?Run deploy/configure.py first}
+      SEED_SECRET: ${SEED_SECRET:?Run deploy/configure.py first}
+    volumes:
+      - ./demo:/demo:ro
+    depends_on: [registry]
+volumes:
+  caddy-data:
+  caddy-config:
+  postgres-data:
+  zot-config:
+  zot-data:

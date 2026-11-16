@@ -7,11 +7,11 @@ and transfer registry content directly through Zot's public address.
 
 ## Login and permissions
 
-Keycloak registers separate public clients for Subsoil's browser and IFC Lite.
-Their exact callbacks and browser origins are in `demo/keycloak/realm.json`.
-Browser login uses Authorization Code with PKCE S256. Tokens are obtained from
-Keycloak's ordinary OIDC token endpoint and use the normal OAuth response
-fields. Subsoil and IFC Lite do not require custom session or permission JSON.
+Keycloak registers a public client for Subsoil's browser in
+`demo/keycloak/realm.json`. Browser login uses Authorization Code with
+PKCE S256. Each external browser application gets a separate client with its
+exact callbacks and browser origins. Keycloak returns ordinary OAuth token
+responses to each client.
 
 The demonstration has two people:
 
@@ -69,9 +69,8 @@ only pending OAuth state and the PKCE verifier temporarily use session storage.
 Disconnecting the file browser clears its tokens. Keycloak manages the separate
 SSO session, so the next authorization may reuse that login.
 
-IFC Lite authorizes the source for pull and a chosen destination for pull and
-push. The demo requests read access for publication because it checks whether a
-version name already exists. Denied permissions require the owner to grant
+An application authorizes the source for pull and the destination for push.
+Checking whether a version name already exists also requires pull access. Denied permissions require the owner to grant
 access; changing a handoff or hiding a button cannot change server enforcement.
 
 ## Demonstration limits

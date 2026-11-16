@@ -1,26 +1,15 @@
 # syntax=docker/dockerfile:1
 
-FROM rust:1.99.1-slim-trixie AS build
-ARG CARGO_BUILD_JOBS=2
-ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential ca-certificates git pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+FROM golang:1.26.11-bookworm AS build
 WORKDIR /build
-COPY Cargo.toml Cargo.lock LICENSE ./
-COPY src ./src
-COPY assets ./assets
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/usr/local/cargo/git \
-    --mount=type=cache,target=/build/target \
-    cargo build --locked --release --bin subsoil \
-    && install -D target/release/subsoil /out/subsoil
+COPY go.mod *.go ./
+COPY web ./web
+COPY assets/brand ./assets/brand
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/subsoil .
 
-FROM gcr.io/distroless/cc-debian13:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot
 COPY --from=build /out/subsoil /usr/local/bin/subsoil
 COPY LICENSE /usr/share/licenses/subsoil/LICENSE
-USER 65532:65532
-WORKDIR /app
 EXPOSE 5000
 ENTRYPOINT ["/usr/local/bin/subsoil"]
 CMD ["serve", "--config", "/etc/subsoil/config.json", "--listen", "0.0.0.0:5000"]

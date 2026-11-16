@@ -1,5 +1,5 @@
 """End-to-end contract checks against the Compose Keycloak, gateway, Zot and Subsoil services."""
-import base64, hashlib, html, http.cookiejar, json, os, pathlib, secrets, time, urllib.error, urllib.parse, urllib.request
+import base64, hashlib, html, http.cookiejar, json, os, secrets, urllib.error, urllib.parse, urllib.request
 REGISTRY=os.getenv('REGISTRY_URL','http://localhost:5001')
 SUBSOIL=os.getenv('SUBSOIL_URL','http://localhost:5080')
 ISSUER=os.getenv('ISSUER_URL','http://localhost:8080/realms/subsoil')
@@ -15,7 +15,7 @@ def response(url,method='GET',data=None,token=None,content_type=None,opener=None
     try: return (opener or urllib.request.build_opener()).open(req,timeout=15)
     except urllib.error.HTTPError as error: return error
 
-def oauth(username,scope,client='ifc-lite',callback='http://localhost:3000/open-artifact/callback'):
+def oauth(username,scope,client='subsoil-browser',callback='http://localhost:5080/explore'):
     verifier=secrets.token_urlsafe(32);state=secrets.token_urlsafe(32)
     challenge=base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip('=')
     query=urllib.parse.urlencode({'client_id':client,'redirect_uri':callback,'response_type':'code','scope':scope,'resource':'http://localhost:5001','state':state,'code_challenge_method':'S256','code_challenge':challenge})
@@ -85,16 +85,19 @@ def main():
     assert claims(native)['access'][0]['actions']==['pull']
     assert response(REGISTRY+'/v2/project/model/manifests/issued',token=native).status==200
     report.append('native Distribution clients also use Keycloak with reader-only repository permissions')
-    launch_fields=json.dumps({'application_id':'ifc-lite','repository':'project/model','reference':'issued','intent':'edit'}).encode()
-    launched=response(SUBSOIL+'/handoff/launches','POST',launch_fields,token,'application/json');assert launched.status==200,(launched.status,launched.read())
-    link=json.load(launched)['launch_url'];fragment=urllib.parse.parse_qs(urllib.parse.urlsplit(link).fragment)
-    handoff=json.loads(base64.urlsafe_b64decode(fragment['handoff'][0]+'==='))
-    assert handoff=={'protocol':'oci-handoff/1','source':{'registry':'http://localhost:5001','repository':'project/model','digest':original},'intent':'edit'}
-    report.append('Subsoil resolved the OCI tag and handed off a credential-free immutable source')
+    catalog = response(SUBSOIL + '/files/_catalog', token=token)
+    assert 'project/model' in json.load(catalog)['repositories']
+    browsed = response(SUBSOIL + '/files/project/model/manifests/issued', token=reader['access_token'])
+    assert browsed.headers['Docker-Content-Digest'] == original and browsed.read() == raw
+    files = response(SUBSOIL + '/files/project/model/blobs/' + layer['digest'], token=reader['access_token'])
+    assert files.read() == pulled
+    apps = response(SUBSOIL + '/handoff/applications?repository=project/model&reference=issued', token=token)
+    assert json.load(apps) == {'protocol': 'oci-handoff/1', 'digest': original, 'applications': []}
+    report.append('Subsoil browsed and downloaded a digest-verified version with no registered apps')
     edited=pulled.replace(b'Wall A',b'Edited wall');assert edited!=pulled
     config=b'{}'
     for data in [config,edited]:upload(data,token)
-    updated={'schemaVersion':2,'mediaType':'application/vnd.oci.image.manifest.v1+json','artifactType':'application/vnd.ifc-lite.ifc.v1','config':{'mediaType':'application/vnd.oci.empty.v1+json','digest':sha(config),'size':2},'layers':[{'mediaType':'application/x-step','digest':sha(edited),'size':len(edited),'annotations':{'org.opencontainers.image.title':'edited.ifc'}}]}
+    updated={'schemaVersion':2,'mediaType':'application/vnd.oci.image.manifest.v1+json','artifactType':'application/vnd.subsoil.file.v1','config':{'mediaType':'application/vnd.oci.empty.v1+json','digest':sha(config),'size':2},'layers':[{'mediaType':'application/x-step','digest':sha(edited),'size':len(edited),'annotations':{'org.opencontainers.image.title':'edited.ifc'}}]}
     raw=json.dumps(updated,separators=(',',':')).encode();tag='smoke-'+secrets.token_hex(4)
     saved=response(REGISTRY+'/v2/project/model/manifests/'+tag,'PUT',raw,token,updated['mediaType']);assert saved.status==201,(saved.status,saved.read())
     assert saved.headers['Docker-Content-Digest']==sha(raw)

@@ -3,7 +3,7 @@
 Subsoil demonstrates an application workflow over independent storage and
 identity services. Zot implements OCI Distribution. Keycloak handles identity
 and permission decisions. Subsoil browses files and opens selected versions in
-applications. IFC Lite reads and publishes directly against Zot's public address.
+applications. Clients read and publish directly against Zot's public address.
 
 The `oci-handoff/1` format is a proposal implemented by this demonstration. It
 is not an OCI, IETF, or buildingSMART standard. The transfer and authorization
@@ -12,23 +12,37 @@ protocols it uses are existing specifications.
 ## Build and check
 
 ```sh
-cargo build --locked
-cargo test --locked
-cargo clippy --all-targets -- -D warnings
+go build -o build/subsoil .
+go test ./...
+go vet ./...
 ```
 
 The live integration uses the Compose services:
 
 ```sh
-docker compose --profile viewer up --build -d
+docker compose up --build -d
 docker compose --profile test run --rm smoke
 ```
 
-The demo fetches the `codex/open-artifact-receiver` branch from
-`zahmadsaleem/ifc-lite` and builds it in Docker. No sibling checkout is used. See
-the [deployment guide](DEPLOYMENT.md#update-the-viewer) for selecting another
-source ref. IFC Lite's `docs/guide/local-registry.md` describes its connection
-configuration and corresponding application checks.
+## Register an application
+
+An empty `applications` list keeps the file browser in standalone mode.
+To offer **Open with…**, add an entry to Subsoil's configuration and restart
+the service:
+
+```json
+{
+  "id": "example-editor",
+  "name": "Example editor",
+  "launch_url": "https://editor.example.org/open"
+}
+```
+
+Register the application's OAuth client with the authorization service using
+its exact callback URLs and browser origins. Give the client the relevant
+repository scopes. Browser apps also need their exact origins allowed by the
+registry gateway. In Compose, add those origins to Envoy's
+`allow_origin_string_match` and recreate the gateway container.
 
 ## Open with
 
@@ -65,11 +79,8 @@ and obtains its own authorization.
 
 Application selection requires no profile registry or content matching rule.
 Applications interpret OCI metadata and report unsupported formats themselves.
-The IFC Lite demonstration accepts a manifest containing exactly one
-`application/x-step` layer, checks its size and SHA-256, then loads it through
-the viewer's ordinary model-loading path. Its publisher uses
-`application/vnd.ifc-lite.ifc.v1` and the OCI empty config descriptor; these IFC
-format choices are separate from the handoff protocol.
+The sample artifact has one `application/x-step` layer and an OCI empty config
+descriptor. Other file types use the same handoff format.
 
 ## Authorization and push to
 
@@ -137,19 +148,3 @@ and `intent`, resolves the manifest through Zot, and returns a `launch_url`
 containing the handoff fragment. These requests use the browser's registry token.
 There is no launch credential, transaction store, or application-specific token
 response extension.
-
-## Optional conversion and OCI tools
-
-The command line retains OCI client operations independently of Subsoil's web
-workflow. Run `subsoil --help` for manifest inspection, blob retrieval, receiving,
-copying and publication. HTTP development access requires `--plain-http`.
-
-```sh
-subsoil convert /path/to/model.ifc --output build/release --model-id design
-subsoil verify build/release
-```
-
-Conversion creates Subsoil's experimental Parquet/GLB release format and
-includes the original IFC by default. `--omit-source` excludes it. Applications
-still decide which formats they can interpret; conversion is unnecessary for
-opening and publishing the plain IFC artifact used by Compose.

@@ -10,4 +10,4 @@ result-*
 *.ifczip
 *.sqlite*
 signing.key
-client-auth.json
+/subsoil

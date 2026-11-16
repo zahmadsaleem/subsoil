@@ -8,11 +8,5 @@
     "repository:project/model:pull",
     "repository:reviews/model:pull"
   ],
-  "applications": [
-    {
-      "id": "ifc-lite",
-      "name": "IFC Lite",
-      "launch_url": "http://localhost:3001/open-artifact"
-    }
-  ]
+  "applications": []
 }

@@ -17,8 +17,6 @@ static_resources:
                         envoy.filters.http.cors:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
                           allow_origin_string_match:
-                            - exact: http://localhost:3000
-                            - exact: http://localhost:3001
                             - exact: http://localhost:5080
                           allow_methods: GET,HEAD,POST,PUT,PATCH,DELETE,OPTIONS
                           allow_headers: authorization,content-type,accept,content-range,range

@@ -1,133 +1,113 @@
-# Run the exchange demonstration
+# Run the CDE demonstration
 
-The root `compose.yaml` runs Subsoil over an independently implemented registry
-and identity provider. Subsoil is stateless: file content lives in Zot and
-accounts and signing keys live in Keycloak.
+Subsoil browses folders and versions in Zot. Keycloak signs repository tokens
+and Envoy checks them at the registry address. Subsoil is stateless.
 
-## Start the services
+## Run locally
 
-Clone Subsoil and install Docker with Compose. The build configuration is in
-this checkout. The viewer's Dockerfile fetches the
-[`codex/open-artifact-receiver` branch of `zahmadsaleem/ifc-lite`](https://github.com/zahmadsaleem/ifc-lite/tree/codex/open-artifact-receiver)
-and compiles it in the build container. No separate IFC Lite checkout is needed.
-The first build needs network access to GitHub and the package registries.
+Clone Subsoil and install Docker with Compose:
 
 ```sh
-docker compose --profile viewer up --build -d
+docker compose up --build -d
 ```
 
 | Address | Service |
 | --- | --- |
 | `http://localhost:5080/explore` | Subsoil Files |
-| `http://localhost:3001` | IFC Lite, when the viewer profile is enabled |
-| `http://localhost:5001/v2/` | Zot's public OCI address through Envoy |
+| `http://localhost:5001/v2/` | Zot through its Envoy gateway |
 | `http://localhost:8080` | Keycloak |
 
-Port 3001 lets the container viewer run alongside a development server on port 3000.
-Port 5080 avoids the macOS service commonly occupying port 5000. Changing a
-public port also requires changing its registered callbacks, browser origins,
-and configured registry/issuer URLs. Internal Docker addresses remain separate
-from the public URLs that appear in tokens and handoffs.
+The `zot-init` service fetches Keycloak's public signing certificate and
+writes the registry and gateway configuration. The seed service publishes
+`demo/model.ifc` as `project/model:issued` if the version is absent.
 
-The `zot-init` service waits for Keycloak, writes its public certificate and Zot
-configuration to `zot-config`, and exits. Zot then starts. The `seed` service
-uses a dedicated Keycloak service account to upload `demo/model.ifc` through
-Zot's public gateway. Rerunning the seed publishes the same `issued` content.
+Sign in to [Subsoil Files](http://localhost:5080/explore) as `writer` with
+`writer-demo-password`. Open `project/model`, choose `issued`, and download
+`model.ifc`. The `reader` account (`reader-demo-password`) can receive the
+same version and cannot publish. The local Keycloak administrator is
+`admin` / `admin-demo-password`.
 
-For an existing local IFC Lite development server, omit `--profile viewer`.
-Set the application's `launch_url` in `demo/subsoil.json` to
-`http://localhost:3000/open-artifact` and restart Subsoil.
-Use its connection configuration from the [development guide](DEVELOPMENT.md)
-and register the exact localhost callbacks already supplied by the demo realm.
+### Publish a version
 
-## Use the workflow
+Install [ORAS](https://oras.land/docs/installation) on the machine running
+the client. From the repository root, publish a new sample version:
 
-Sign in to Subsoil as `writer` / `writer-demo-password`. Open `project/model`,
-choose `issued`, and select **Open with…** or **Edit with… → IFC Lite**.
-IFC Lite independently authorizes its source read with Keycloak and retrieves
-the selected model from Zot by digest.
+```sh
+oras login --plain-http --username writer localhost:5001
+oras push --plain-http --artifact-type application/vnd.subsoil.file.v1 \
+  localhost:5001/project/model:revision-2 demo/model.ifc:application/x-step
+oras logout localhost:5001
+```
 
-Edit a property, then choose **File → Cloud Sources → Push to…**. Select the
-file store and folder, enter a fresh version name, and approve destination
-access. **Open saved version** opens a new viewer tab for the exact saved
-manifest. Refresh the versions in Subsoil to see the publication.
+Enter the writer password when prompted. Refresh Subsoil and open `revision-2`
+to see the published file. To check role enforcement, log in as `reader` and
+try publishing to a fresh tag. Zot should deny the upload. For an HTTPS
+deployment, use its registry hostname and omit `--plain-http`.
 
-The `reader` / `reader-demo-password` account can receive `project/model` and
-cannot publish. Keycloak's demonstration administrator is `admin` /
-`admin-demo-password`; its realm import is `demo/keycloak/realm.json`.
-
-## Verify and inspect
+### Check the exchange
 
 ```sh
 docker compose --profile test run --rm smoke
-docker compose ps
+docker compose ps -a
 docker compose logs subsoil keycloak registry zot seed
 ```
 
-The smoke service runs real PKCE exchanges for both accounts, validates file
-bytes and handoff contents, checks reader denial, publishes an edited IFC,
-reopens it by digest, confirms Subsoil lists the new version, and checks that
-Envoy rejects a genuine Keycloak token without the registry audience.
+The smoke test uses real OAuth PKCE and native OCI token exchanges. It checks
+that readers can browse and download and are denied uploads, then publishes
+an edited sample directly to Zot and checks that Subsoil lists the revision.
 
-The container check uses internal network addresses for connections while
-preserving the public issuer, callback and registry identifiers. These network
-adaptations are test scaffolding; applications use public addresses directly.
+`docker compose down` preserves volumes. For a disposable local demo,
+`docker compose down --volumes` also removes identities, signing keys, files,
+and versions. The next startup reimports the local Keycloak realm.
 
-## Update the viewer
+## Host on Hetzner Cloud
 
-The viewer follows the branch selected by `IFC_LITE_REF` in
-`demo/ifc-lite/Dockerfile`. Docker resolves that branch when building and uses
-the resolved commit for its source cache. Rebuild to include new branch commits:
+Prepare one Ubuntu VM with an SSH key and the Docker Engine, Buildx, and
+Compose plugins. Allow TCP 80 and 443 in the Hetzner firewall and restrict
+SSH to your IP. Point three DNS names at the server for the file browser,
+registry, and sign-in issuer. Only publish IPv6 DNS records for an address
+configured and reachable on the VM.
 
-```sh
-docker compose --profile viewer up --build -d
-```
-
-The build log prints the source commit. To select another branch, tag, or a
-fixed commit, supply the build argument:
+Clone Subsoil on the VM. From its root, generate the hosted configuration
+with Python 3. Substitute your DNS names in this command:
 
 ```sh
-docker compose --profile viewer build --build-arg IFC_LITE_REF=<branch-tag-or-commit> viewer
+python3 deploy/configure.py \
+  --files-host files.example.org \
+  --registry-host registry.example.org \
+  --auth-host auth.example.org
 ```
 
-After changing the source, repeat the exchange checks and browser
-edit/publish/reopen workflow.
+The command creates `build/hosted/` with distinct generated passwords and
+the Compose environment. Keep that directory private and back it up.
+`accounts.txt` contains the generated reader, writer, and administrator
+passwords. The Keycloak realm is imported on initial startup, so regenerating
+local files alone cannot rotate credentials in an existing database.
 
-## Persistence and reset
-
-Zot content is in `zot-data`. Keycloak's development database, identities and
-signing keys are in `keycloak-data`. Its imported realm is loaded only when it
-does not already exist. Editing the import file does not overwrite a running
-realm. Use the Keycloak administration interface for existing accounts.
+Start Compose using the generated environment:
 
 ```sh
-docker compose down
+docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml config --quiet
+docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml up --build -d
+docker compose --env-file build/hosted/compose.env -f compose.hosted.yaml ps -a
 ```
 
-This stops the demo while retaining its named volumes. To deliberately discard
-all demo accounts, keys and model versions and import the configuration again:
+Caddy obtains TLS certificates once DNS and the firewall are ready. Open
+the files hostname at `/explore` and repeat the publish and read-only checks
+using the generated accounts. Caddy exposes the Keycloak demo realm for
+sign-in. The admin console, database, and raw Zot listener stay inside the
+Docker network.
 
-```sh
-docker compose down --volumes
-```
+Keep recoverable backups of the PostgreSQL database and Zot's `zot-data`
+volume, plus the generated configuration and deployment credentials. Use
+`pg_dump` for the database and take a consistent copy of the registry volume
+with writes paused. Preserve both when replacing the VM.
 
-Restart the complete stack after resetting. Keycloak's keys and Zot's trusted
-certificate must agree; the initialization service handles this on a fresh
-start. A running Zot process does not automatically reload that certificate.
+## Connect external applications
 
-## Other deployments
-
-`subsoil serve --config <configuration.json> --listen <address>` needs a fixed
-OCI upstream, its browser-facing registry URL, the authorization issuer and
-browser client, requested scopes, and application launch registrations. It
-requires no registry storage directory and offers no local account commands.
-The upstream must enforce repository access for every request, including
-catalog listing. An operator must not substitute an unrestricted registry
-endpoint behind the workflow API.
-
-The Compose configuration is a local demo using HTTP and known credentials.
-Shared hosting needs HTTPS, persistent identity-provider storage appropriate to
-that environment, application callback/origin registration, and a signing-key
-rotation strategy. Configure object storage, retention, garbage collection,
-and tag immutability in Zot. Subsoil's read-only browsing API and application
-handoffs remain independent of those storage choices.
+Subsoil loads its public registry origin, a fixed private registry gateway,
+authorization issuer, client ID, scopes, and application registrations from
+`subsoil serve --config <configuration.json> --listen <address>`. The
+[development guide](DEVELOPMENT.md#register-an-application) shows how to
+register another application. The gateway behind Subsoil must enforce
+repository access on every request, including catalog listing.

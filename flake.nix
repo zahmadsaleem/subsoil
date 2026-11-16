@@ -7,25 +7,17 @@
       eachSystem = nixpkgs.lib.genAttrs systems;
       packageFor = system:
         let pkgs = import nixpkgs { inherit system; };
-        in pkgs.rustPlatform.buildRustPackage {
+        in pkgs.buildGoModule {
           pname = "subsoil";
           version = "0.2.0";
-          src = pkgs.lib.cleanSourceWith {
-            src = ./.;
-            filter = path: type:
-              let
-                relative = pkgs.lib.removePrefix ((toString ./.) + "/") (toString path);
-              in (toString path) == (toString ./.) || builtins.elem relative [ "Cargo.toml" "Cargo.lock" "LICENSE" "src" "tests" "assets" "assets/brand" ]
-                 || pkgs.lib.hasPrefix "src/" relative || pkgs.lib.hasPrefix "tests/" relative
-                 || pkgs.lib.hasPrefix "assets/brand/" relative;
+          src = pkgs.lib.fileset.toSource {
+            root = ./.;
+            fileset = pkgs.lib.fileset.unions [
+              ./go.mod ./main.go ./service.go ./registry.go ./handoff.go
+              ./workflow_test.go ./web ./assets/brand ./LICENSE
+            ];
           };
-          cargoLock = {
-            lockFile = ./Cargo.lock;
-            outputHashes."ifc-lite-core-25.0.0" = "sha256-TtBp7dY9Nu4zsVUl3ZmH5BAIF4+xF6ZsP6n81/oMJHQ=";
-          };
-          nativeBuildInputs = [ pkgs.pkg-config ];
-          # Networked integration tests run explicitly through the demo app.
-          cargoTestFlags = [ "--lib" ];
+          vendorHash = null;
           meta.mainProgram = "subsoil";
           meta.license = pkgs.lib.licenses.asl20;
         };
@@ -36,12 +28,12 @@
           pkgs = import nixpkgs { inherit system; };
           package = packageFor system;
         in {
-          default = { type = "app"; program = "${package}/bin/subsoil"; meta.description = "Application handoffs and OCI exchange tools"; };
+          default = { type = "app"; program = "${package}/bin/subsoil"; meta.description = "Subsoil file browsing and application handoffs"; };
         });
       devShells = eachSystem (system:
         let pkgs = import nixpkgs { inherit system; };
         in { default = pkgs.mkShell {
-          packages = with pkgs; [ cargo rustc rustfmt clippy pkg-config oras jq nodejs ];
+          packages = with pkgs; [ go oras jq nodejs ];
         }; });
       checks = eachSystem (system: { build = packageFor system; });
     };
