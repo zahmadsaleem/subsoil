@@ -37,6 +37,10 @@ public final class RegistryTokenMapper extends AbstractOIDCProtocolMapper implem
         String workspaceBinding = mapping.getConfig().getOrDefault("workspaceRepository", "");
         String workspace = WorkspaceAccess.repository(user.getUser());
         boolean workspaceAllowed = !workspace.isEmpty() && (workspaceBrowser || workspace.equals(workspaceBinding));
+        if (!workspaceBinding.isEmpty() && !workspaceAllowed) {
+            throw new ErrorResponseException("invalid_grant", "Sign in with the account that owns this app's workspace",
+                    jakarta.ws.rs.core.Response.Status.BAD_REQUEST);
+        }
         Map<String, Set<String>> repositories = new LinkedHashMap<>();
         Set<String> granted = new LinkedHashSet<>();
         boolean catalogRequested = false;

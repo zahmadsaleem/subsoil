@@ -13,7 +13,21 @@ PKCE S256. Each external browser application gets a separate client with its
 exact callbacks and browser origins. Keycloak returns ordinary OAuth token
 responses to each client.
 
-The demonstration has two people:
+A verified account owns `workspaces/<account-id>/scratch`. The Keycloak
+mapper derives the repository from the account's immutable ID. For a
+registered app, the requested workspace scopes grant pull and push only
+when the app is bound to that same repository. The catalog uses concrete
+pull grants to determine which repositories the browser can see. The
+native Distribution token mapper uses the same account-to-repository
+rule for OCI clients.
+
+The workspace registrar introspects Subsoil browser tokens in Keycloak
+and uses a confidential service account to register or remove Keycloak
+clients on the owner's behalf. Registrations and client bindings live in
+Keycloak. The registrar sets the allowed origin and scopes from the
+demo's policy and gives browser apps a public client ID.
+
+Two fixture accounts exercise shared-file permissions:
 
 | Account | Password | File access |
 | --- | --- | --- |
@@ -32,10 +46,9 @@ repository pull scopes. Catalog permission alone grants no repository reads.
 Zot uses the token's repository permissions to filter its catalog. Subsoil
 paginates those results for its Files page.
 
-The optional client scopes enumerate the demo's folders. Adding another folder
-requires its realm roles, client scopes and scope-role mappings, and the desired
-browser listing scope. This is an intentionally small demo policy adapter,
-not a general policy language or an authorization standard.
+Optional scopes enumerate the shared fixture folders. Personal workspaces
+use `workspace:read` and `workspace:write` for browser authorization and
+receive exact repository claims in the same Distribution token format.
 
 ## What the standards cover
 
@@ -75,8 +88,9 @@ access; changing a handoff or hiding a button cannot change server enforcement.
 
 ## Demonstration limits
 
-Compose publishes local HTTP ports and includes known demo passwords. Keycloak
-runs in development mode. The initialization container snapshots the realm's
+Local Compose publishes loopback HTTP ports and captures verification emails
+with Mailpit. Keycloak runs in development mode locally. The initialization
+container snapshots the realm's
 current RSA signing certificate for Zot; the demo does not automate Zot's
 certificate reload after Keycloak key rotation. The initialization service also prepares Envoy’s JWKS snapshot, including Keycloak’s Docker key-ID aliases. Both verifiers need a refresh when the signing key rotates.
 These choices support a local demonstration and need deliberate deployment

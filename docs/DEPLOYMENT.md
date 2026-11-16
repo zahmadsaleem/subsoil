@@ -16,10 +16,17 @@ docker compose up --build -d
 | `http://localhost:5080/explore` | Subsoil Files |
 | `http://localhost:5001/v2/` | Zot through its Envoy gateway |
 | `http://localhost:8080` | Keycloak |
+| `http://localhost:8025` | Demo verification emails |
 
 The `zot-init` service fetches Keycloak's public signing certificate and
 writes the registry and gateway configuration. The seed service publishes
 `demo/model.ifc` as `project/model:issued` if the version is absent.
+
+Select **Sign in** and register an account, then use the email in Mailpit
+to verify it. **My workspace** contains three sample versions, each with
+a distinct OCI artifact type. The
+[development guide](DEVELOPMENT.md#try-the-starter-editor) shows how to
+register and run the editor.
 
 Sign in to [Subsoil Files](http://localhost:5080/explore) as `writer` with
 `writer-demo-password`. Open `project/model`, choose `issued`, and download
@@ -107,6 +114,31 @@ three public endpoints over HTTPS. To deploy a specific tag or commit with
 published images, pass `-e subsoil_revision=<ref>`. Rerun the playbook with
 the same hostnames to apply an update with the existing credentials and
 volumes.
+
+### Enable hosted signup
+
+Place your Keycloak SMTP settings in
+`/root/subsoil/build/hosted/smtp.json` on the VPS. Set its permissions to
+`0600` and rerun the deployment. For example, a relay that uses
+authenticated STARTTLS needs these keys:
+
+```json
+{
+  "host": "smtp.example.org",
+  "port": "587",
+  "from": "subsoil@example.org",
+  "starttls": "true",
+  "auth": "true",
+  "user": "subsoil@example.org",
+  "password": "<smtp password>"
+}
+```
+
+The identity setup enables signup and email verification in the existing
+Keycloak realm when this file is present. The registry limits each request
+body to 4 MiB and limits published content to 64 MiB per repository, with
+a ceiling of 128 repositories. The per-repository quota counts published
+content. Uncommitted uploads can use disk until the registry reclaims them.
 
 ### Manual deployment
 

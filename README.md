@@ -20,15 +20,17 @@ Clone this repository and start the local Docker Compose stack:
 docker compose up --build -d
 ```
 
-Open [Subsoil Files](http://localhost:5080/explore). Sign in as `writer` with
-`writer-demo-password`, open `project/model`, and choose the `issued` version.
-Download `model.ifc` to get the original file. The `reader` account
-(`reader-demo-password`) can browse and download from this folder.
+Open [Subsoil Files](http://localhost:5080/explore), select **Sign in**, and
+create an account. Open the verification message in
+[the local inbox](http://localhost:8025). Subsoil seeds example versions
+in **My workspace** the first time you sign in.
 
-Publish a revision with ORAS or another OCI client against
-`localhost:5001/project/model`. Refresh Subsoil to see the new version.
-The [deployment guide](docs/DEPLOYMENT.md#publish-a-version) walks through the
-exchange and shows how to run the HTTPS stack on a single server.
+Run the [starter editor](docs/DEVELOPMENT.md#try-the-starter-editor) on
+`http://localhost:5173` and register it under **Workspace apps**. Open
+`notes-v1` with the editor, change a line, and publish `notes-v2`. Refresh
+Subsoil to see the new version. The
+[deployment guide](docs/DEPLOYMENT.md#publish-a-version) has an ORAS example
+and explains how to run the HTTPS stack.
 
 ```sh
 docker compose --profile test run --rm smoke

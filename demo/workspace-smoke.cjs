@@ -21,6 +21,8 @@ async function verifyEmail(page, email) {
       const link = message.Text.match(/https?:\/\/[^\s<]+\/login-actions\/action-token\?[^\s<]+/);
       assert(link, 'Keycloak sent an email verification link');
       await page.goto(link[0]);
+      const confirm = page.locator('#kc-info-message a[href*="/login-actions/action-token"]');
+      if (await confirm.isVisible()) await confirm.click();
       return;
     }
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -52,6 +54,9 @@ async function signUp(browser, label) {
   await form.locator('[type=submit]').click();
   const authenticated = tokenResponse(page);
   const provisioned = page.waitForResponse(reply => reply.url() === files + '/workspace');
+  // Report the page that blocked setup without printing action links or tokens.
+  const observed = Promise.all([authenticated, provisioned]);
+  observed.catch(() => {});
   await verifyEmail(page, email);
   const update = page.locator('#kc-passwd-update-form');
   await update.waitFor({ timeout: 5000 }).catch(() => {});
@@ -60,10 +65,22 @@ async function signUp(browser, label) {
     await update.locator('#password-confirm').fill(password);
     await update.locator('[type=submit]').click();
   }
-  const reply = await authenticated;
+  if (!page.url().startsWith(files + '/explore')) {
+    const heading = await page.locator('h1').first().textContent().catch(() => '');
+    console.log('Email confirmation returned to ' + new URL(page.url()).pathname + ' (' + heading.trim() + ').');
+    await page.goto(files + '/explore');
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    const login = page.locator('#kc-form-login');
+    await login.waitFor({ timeout: 4000 }).catch(() => {});
+    if (await login.isVisible()) {
+      await login.locator('#username').fill(name);
+      await login.locator('#password').fill(password);
+      await login.locator('[type=submit]').click();
+    }
+  }
+  const [reply, workspace] = await observed;
   assert.equal(reply.status(), 200, 'Workspace PKCE token');
   const token = (await reply.json()).access_token;
-  const workspace = await provisioned;
   assert.equal(workspace.status(), 200, await workspace.text());
   const settings = await workspace.json();
   await page.getByRole('link', { name: 'My workspace', exact: false }).waitFor();
