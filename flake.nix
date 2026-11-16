@@ -33,7 +33,7 @@
       devShells = eachSystem (system:
         let pkgs = import nixpkgs { inherit system; };
         in { default = pkgs.mkShell {
-          packages = with pkgs; [ go oras jq nodejs ];
+          packages = with pkgs; [ go oras jq nodejs python3Packages.ansible-core ];
         }; });
       checks = eachSystem (system: { build = packageFor system; });
     };
