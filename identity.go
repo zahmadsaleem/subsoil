@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -95,6 +96,8 @@ func (i *identity) owner(ctx context.Context, authorization string) (string, err
 	}
 	if !result.Active || result.ClientID != i.browser || !workspaceID.MatchString(result.Subject) ||
 		!slices.Contains(strings.Fields(result.Scope), "workspace:write") {
+		log.Printf("workspace token active=%t browser=%t subject-valid=%t scope=%q",
+			result.Active, result.ClientID == i.browser, workspaceID.MatchString(result.Subject), result.Scope)
 		return "", noWorkspace
 	}
 	return result.Subject, nil

@@ -81,7 +81,15 @@ async function signUp(browser, label) {
   }
   const [reply, workspace] = await observed;
   assert.equal(reply.status(), 200, 'Workspace PKCE token');
-  const token = (await reply.json()).access_token;
+  const granted = await reply.json();
+  const token = granted.access_token;
+  if (workspace.status() !== 200) {
+    const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url'));
+    console.log('Workspace token details', {
+      scope: claims.scope, responseScope: granted.scope, audience: claims.aud,
+      hasWorkspace: claims.access?.some(entry => entry.name.startsWith('workspaces/'))
+    });
+  }
   assert.equal(workspace.status(), 200, await workspace.text());
   const settings = await workspace.json();
   await page.getByRole('link', { name: 'My workspace', exact: false }).waitFor();
