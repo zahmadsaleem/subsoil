@@ -134,9 +134,16 @@ def configure():
         admin(browser_path + "/optional-client-scopes/" + scopes[name]["id"], "PUT")
 
     mapper_path = browser_path + "/protocol-mappers/models"
-    mapper = next(item for item in admin(mapper_path) if item["protocolMapper"] == "subsoil-demo-registry-token")
+    mappers = admin(mapper_path)
+    mapper = next(item for item in mappers if item["protocolMapper"] == "subsoil-demo-registry-token")
     mapper["config"]["workspaceBrowser"] = "true"
     admin(mapper_path + "/" + mapper["id"], "PUT", mapper)
+    if not any(item["protocolMapper"] == "oidc-sub-mapper" for item in mappers):
+        admin(mapper_path, "POST", {
+            "name": "Workspace account ID", "protocol": "openid-connect",
+            "protocolMapper": "oidc-sub-mapper",
+            "config": {"access.token.claim": "true", "introspection.token.claim": "true"},
+        })
 
     secret = admin(registrar_path + "/client-secret")["value"]
     temporary = Path("/identity/registrar.tmp")
