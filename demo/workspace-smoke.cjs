@@ -127,9 +127,18 @@ async function main() {
     const alice = await signUp(browser, 'Alice');
     const bob = await signUp(browser, 'Bob');
     assert.notEqual(alice.repository, bob.repository);
-    const app = await register(alice, 'Text editor', editor, [
-      { artifact_type: notes, intents: ['view', 'edit'] }, { artifact_type: review, intents: ['view'] },
-    ]);
+    await alice.page.getByText('Workspace apps', { exact: true }).click();
+    const registration = alice.page.locator('#register-app');
+    await registration.getByLabel('App name').fill('Text editor');
+    await registration.getByLabel('Artifact types to view').fill(notes + ', ' + review);
+    await registration.getByLabel('Artifact types to edit').fill(notes);
+    const registered = alice.page.waitForResponse(reply =>
+      reply.url() === files + '/workspaces/' + alice.id + '/apps' && reply.request().method() === 'POST');
+    await registration.getByRole('button', { name: 'Register app' }).click();
+    const registeredReply = await registered;
+    assert.equal(registeredReply.status(), 201, await registeredReply.text());
+    const app = await registeredReply.json();
+    await alice.page.getByText('App registered.', { exact: false }).waitFor();
     const viewer = await register(alice, 'Preview', editor + 'index.html', [{ artifact_type: notes, intents: ['view'] }]);
     const query = tag => '/handoff/applications?' + new URLSearchParams({ repository: alice.repository, reference: tag });
     const matched = await (await http(files, query('notes-v1'), alice.token)).json();
