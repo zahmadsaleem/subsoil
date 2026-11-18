@@ -142,6 +142,7 @@
     - name: Verify the public endpoints over HTTPS
       ansible.builtin.uri:
         url: "{{ item.url }}"
+        headers: "{{ item.headers | default({}) }}"
         status_code: "{{ item.status }}"
         follow_redirects: none
         timeout: 5
@@ -152,12 +153,18 @@
           status: 200
         - url: "https://{{ subsoil_auth_host }}/realms/subsoil/.well-known/openid-configuration"
           status: 200
+        - url: "https://{{ subsoil_auth_host }}/.well-known/oauth-authorization-server/realms/subsoil"
+          status: 200
+          headers:
+            Origin: http://localhost:5173
         - url: "https://{{ subsoil_registry_host }}/v2/"
           status: 401
       loop_control:
         label: "{{ item.url }}"
       register: subsoil_ready
-      until: subsoil_ready.status == item.status
+      until:
+        - subsoil_ready.status == item.status
+        - item.headers is not defined or (subsoil_ready.access_control_allow_origin | default('')) == item.headers.Origin
       retries: 24
       delay: 5
       tags: public_check
