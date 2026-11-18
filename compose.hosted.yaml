@@ -6,6 +6,7 @@ services:
       FILES_HOST: ${FILES_HOST:?Run deploy/configure.py first}
       REGISTRY_HOST: ${REGISTRY_HOST:?Run deploy/configure.py first}
       AUTH_HOST: ${AUTH_HOST:?Run deploy/configure.py first}
+      SUBSOIL_RELEASE: ${SUBSOIL_IMAGE_TAG:?Set SUBSOIL_IMAGE_TAG to a published commit SHA}
     ports:
       - "80:80"
       - "443:443"

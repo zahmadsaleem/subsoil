@@ -7,7 +7,7 @@
 }
 
 {$AUTH_HOST} {
-	@demoRealm path /realms/subsoil /realms/subsoil/* /resources/*
+	@demoRealm path /realms/subsoil /realms/subsoil/* /.well-known/oauth-authorization-server/realms/subsoil /resources/*
 	handle @demoRealm {
 		reverse_proxy keycloak:8080
 	}
