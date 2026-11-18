@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - presentations/oci-aec-2026-10-28/**
+      - presentations/project-data-exchange/**
       - .github/workflows/pitch-pages.yml
   workflow_dispatch:
 
@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Validate and prepare public pitch
-        run: python3 presentations/oci-aec-2026-10-28/tools/prepare_site.py --output build/pitch-site
+        run: python3 presentations/project-data-exchange/tools/prepare_site.py --output build/pitch-site
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload public pitch only

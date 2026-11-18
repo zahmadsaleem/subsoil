@@ -31,16 +31,56 @@ sources of accountability, transparency, and reliability problems. The study is
 qualitative evidence about recurring difficulties, rather than a measurement
 of their prevalence across the industry. [2]
 
-This is consistent with the UK BIM Framework's distinction between a CDE
-workflow and the technical solutions supporting it. Its guidance addresses
-metadata moving between solutions, revision control, and the status assigned
-to information. A delivery mechanism therefore needs to fit an information
-workflow; transferring a file does not establish its suitability for a task. [3]
+The UK BIM Framework distinguishes the CDE workflow from the technical
+solutions that support it. The client and delivery teams can operate their
+own systems within one agreed project workflow. Its transfer example shows
+what happens when one system has a classification field and another models
+that classification with folders. Someone has to agree on the mapping and may
+have to enter the metadata again. The receiving team needs the permitted use
+and revision alongside the file. [3]
+
+NIST's 2004 capital facilities study estimated that inadequate interoperability
+cost the US industry segment $15.8 billion in 2002. Owners and operators bore
+about two-thirds of the estimated costs, mostly during operation and
+maintenance. The estimate covers information exchange and management across
+the asset life cycle, including paper records. It gives historical context for
+the cost of recreating usable information at handover. [21]
 
 For a project team, the practical questions are familiar. Which version is this?
 What was it issued for? Which inputs produced this report? Who can use it?
 Those questions offer a clearer introduction to a shared delivery architecture
 than its storage terminology.
+
+## Data ownership across organizational boundaries
+
+Keeping control of project data means being able to choose where it is stored,
+grant access to the information a team is responsible for, and keep usable
+copies of the records it is entitled to retain. A design firm can keep its
+working files and issue selected versions. An owner can keep accepted
+deliverables and their approval records in an environment it controls. Project
+agreements determine which records are authoritative and what each party can
+retain, share, and reuse. The Infrastructure Client Group recommends specifying
+responsibility for transfers, consistent permissions and audit records, and
+portable handover data when teams use several systems. [1]
+
+Construction research has tested parts of this approach. Petri and colleagues
+used a UK infrastructure project trial to exchange IFC contributions through a
+common interface across separate cloud nodes. The participating disciplines
+could keep their source data where they managed it and share contributions with
+information about their intended use. Werbrouck and colleagues demonstrated a
+different exchange in a prototype that assembled issue data from distributed
+stores and presented it through buildingSMART's BIM Collaboration Format (BCF)
+API. The studies cover model coordination and issue exchange, respectively.
+[22][23]
+
+A common interface gives a team a way to replace one compatible system while
+keeping the way its partners send and receive information. Where an existing
+CDE requires an adapter, the adapter maps to the shared interface. The parties
+also need agreement on how to identify a release, interpret its permitted use,
+and verify who issued or accepted it. OCI can identify and transfer exact file
+versions. For a governed exchange, test whether an owner can verify the
+authorized version and its approval history from a retained copy after a system
+change or the closure of the original project account. [1][15][16][17]
 
 ## Dependence on software suppliers
 
@@ -233,3 +273,6 @@ and [development guide](DEVELOPMENT.md).
 18. ORAS. [Pushing and pulling OCI artifacts](https://oras.land/docs/how_to_guides/pushing_and_pulling/) and [copying artifacts between registries](https://oras.land/docs/commands/oras_cp/).
 19. Model Context Protocol. [Resources](https://modelcontextprotocol.io/specification/2025-11-25/server/resources). Specification dated November 25, 2025.
 20. Model Context Protocol. [Tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools). Specification dated November 25, 2025.
+21. Gallaher, M. P., O'Connor, A. C., Dettbarn, J. L., Jr., and Gilday, L. T. [Cost Analysis of Inadequate Interoperability in the U.S. Capital Facilities Industry](https://nvlpubs.nist.gov/nistpubs/gcr/2004/nist.gcr.04-867.pdf). NIST GCR 04-867, 2004. Estimates for 2002.
+22. Petri, I., Beach, T., Rana, O. F., and Rezgui, Y. [Coordinating multi-site construction projects using federated clouds](https://orca.cardiff.ac.uk/id/eprint/103921/). *Automation in Construction*, 83, 273–284, 2017.
+23. Werbrouck, J., Schulz, O., Oraskari, J., Mannens, E., Pauwels, P., and Beetz, J. [A generic framework for federated CDEs applied to Issue Management](https://research.tue.nl/en/publications/a-generic-framework-for-federated-cdes-applied-to-issue-managemen/). *Advanced Engineering Informatics*, 58, 102136, 2023.
