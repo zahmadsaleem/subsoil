@@ -10,6 +10,7 @@ other compatible clients and registries can participate independently of Subsoil
 and its model profile.
 
 [Read the project pitch](https://madsolame.com/subsoil/).
+[Read the pitch and speaker notes in Markdown](docs/PITCH.md).
 [Open the practical handbook](docs/handbook.html).
 [Read the research on CDEs, information flow, and AI](docs/CDE_AI_RESEARCH.md).
 

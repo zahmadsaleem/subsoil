@@ -1,142 +1,564 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="description" content="A vision for connected project information that stays useful across teams, tools, and the life of a building."><title>Pitch</title><style>
-:root{--paper:#f5f2e9;--ink:#183e40;--teal:#24786e;--muted:#556b68;--mint:#d8e9df;--lime:#d5f49e;--coral:#cf7258;--line:#cbd4ca;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#132d30;font-synthesis:none}
-*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}a{color:inherit;text-underline-offset:4px}button{font:inherit;cursor:pointer}a:focus-visible,button:focus-visible{outline:3px solid var(--coral);outline-offset:5px}
-#viewport{height:calc(100dvh - 60px);width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}#deck{position:relative;width:1600px;height:900px;flex-shrink:0;transform-origin:center center}.slide{position:absolute;inset:0;display:none;overflow:hidden;background:var(--paper);padding:58px 80px 80px}.slide.active{display:block}.eyebrow{font-size:17px;letter-spacing:2px;text-transform:uppercase;font-weight:700;color:var(--muted);margin-bottom:32px}.eyebrow span{margin-right:18px;color:var(--teal)}h1{font-size:76px;line-height:1.05;letter-spacing:-3.2px;font-weight:700;margin:0 0 28px}h1 em{font-style:normal;color:var(--teal)}.lede{font-size:27px;line-height:1.4;color:var(--muted);margin:0;max-width:510px}.split{display:grid;grid-template-columns:530px 1fr;gap:12px;align-items:center;height:650px}.copy{position:relative;z-index:1}.visual{position:relative;min-width:0;width:100%;height:650px;display:flex;align-items:center;justify-content:center}.art{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:contain;border:0!important;outline:0;box-shadow:none;background:transparent;border-radius:0;mix-blend-mode:multiply;mask-image:linear-gradient(to right,transparent,#000 13%,#000 87%,transparent),linear-gradient(to bottom,transparent,#000 13%,#000 87%,transparent);mask-composite:intersect;-webkit-mask-image:linear-gradient(to right,transparent,#000 13%,#000 87%,transparent),linear-gradient(to bottom,transparent,#000 13%,#000 87%,transparent);-webkit-mask-composite:source-in}.visual .art{width:103%;max-width:none}.hero .split,.closing .split{grid-template-columns:550px 1fr}.hero h1,.closing h1{font-size:83px;letter-spacing:-3.8px}.hero .lede,.closing .lede{max-width:420px}.wide-art h1{font-size:70px}.wide-art>.art{height:565px;width:847.5px;margin:-5px auto 0}.wide-art .lede{max-width:none}.slide-footer{position:absolute;bottom:25px;left:80px;right:80px;display:flex;justify-content:space-between;align-items:center;font-size:13px;letter-spacing:.3px;color:var(--muted);height:20px}.dark{background:var(--ink);color:var(--paper);--muted:#bfd4cc;--line:#48706c}.dark .eyebrow span,.dark h1 em{color:var(--lime)}.dark .eyebrow{color:var(--mint)}.agent h1{font-size:84px}.agent-flow{display:grid;grid-template-columns:1fr 65px 1.15fr 65px 1fr;align-items:center;gap:22px;margin-top:90px}.small-label{font-size:17px;text-transform:uppercase;letter-spacing:1.8px;color:var(--muted);display:block;margin-bottom:26px}.agent-flow h2{font-size:38px;line-height:1.2;letter-spacing:-1.2px;margin:0 0 16px}.agent-flow p{font-size:24px;color:var(--mint);margin:0}.flow-arrow{font-size:48px;color:var(--teal)}.dark .flow-arrow{color:var(--lime)}.agent-caption{margin-top:95px;font-size:26px;color:var(--mint)}
-#controls{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;color:#dce7e1;background:#132d30;font-size:13px;gap:20px}#controls .group{display:flex;align-items:center;gap:9px}#controls button{color:inherit;background:transparent;border:1px solid #40605e;border-radius:7px;padding:7px 11px;line-height:1.15;white-space:nowrap}#controls button:hover{background:#284c4b}#controls button:disabled{opacity:.3;cursor:default}#position{font-variant-numeric:tabular-nums;min-width:60px;text-align:center}.keys{color:#9fb8ae;margin-left:10px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.progress{position:fixed;bottom:57px;left:0;height:3px;background:var(--lime);z-index:2;width:0;transition:width 150ms linear}#notes-panel{display:none;position:fixed;left:0;right:0;bottom:60px;height:250px;overflow-y:auto;padding:20px 34px;background:var(--paper);color:var(--ink);border-top:3px solid var(--teal);z-index:5;font-size:17px;line-height:1.5}#notes-panel h2{font-size:20px;margin:0 0 12px}#notes-panel p{margin:0 0 12px;max-width:1300px}#notes-panel a{color:var(--teal)}body.notes-open #notes-panel{display:block}body.notes-open #viewport{height:calc(100dvh - 310px)}body.notes-open .progress{bottom:307px}#help{border:0;border-radius:12px;background:var(--paper);color:var(--ink);max-width:530px;padding:32px;font-size:16px}#help::backdrop{background:#102c32aa}#help h2{margin-top:0}#help dl{display:grid;grid-template-columns:180px 1fr;gap:16px}#help dd{margin:0}#help button{background:var(--ink);color:var(--paper);border:0;padding:10px 20px}.no-js{color:var(--paper);padding:12px;text-align:center}.speaker-note{display:none}
-@media(max-width:800px){.keys{display:none}#controls{padding:0 10px;gap:8px}#controls .group{gap:6px}#controls button{padding:7px 8px}#notes-panel{padding:14px 18px}}@media(max-width:520px){#fullscreen,#print,#help-open{display:none}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}@page{size:1600px 900px;margin:0}@media print{html,body{overflow:visible!important;background:var(--paper);width:1600px;height:auto}#viewport,body.notes-open #viewport{display:block!important;width:1600px;height:auto;overflow:visible}#deck{width:1600px!important;height:auto!important;transform:none!important;zoom:1!important}.slide,.slide.active{display:block!important;position:relative;width:1600px;height:900px;break-after:page;page-break-after:always;-webkit-print-color-adjust:exact;print-color-adjust:exact}.slide:last-child{break-after:auto;page-break-after:auto}#controls,#notes-panel,.progress,#live,#help,.no-js{display:none!important}.slide a{color:inherit!important}.speaker-note{display:none!important}}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A short pitch on sharing project data between independently built apps and organizations.">
+<title>Pitch</title>
+<style>
+:root {
+  --paper: #f5f2e9;
+  --ink: #163735;
+  --muted: #4d625b;
+  --teal: #216f62;
+  --sage: #e4ece0;
+  --lime: #d5edab;
+  --coral: #c36b50;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  background: #102d2e;
+}
 
-.wide-art h1{font-size:68px;line-height:1.04;margin-bottom:20px}
-.wide-art>.art{height:500px;width:750px;margin:-4px auto 0}
-.closing h1{font-size:75px;letter-spacing:-3.4px}
-.agent-flow{margin-top:76px}.agent-caption{margin-top:90px}
-.continuity-slide h1{font-size:104px;margin-top:48px}
-.life-flow{display:flex;align-items:center;justify-content:space-between;gap:30px;margin-top:100px;font-size:60px;font-weight:700;letter-spacing:-2px}
-.life-flow .flow-arrow{font-size:44px;font-weight:400}
-.life-caption{font-size:28px;color:var(--muted);margin-top:76px}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
+button { font: inherit; cursor: pointer; }
+a { color: inherit; text-underline-offset: .22em; }
+:is(a, button):focus-visible { outline: 3px solid var(--coral); outline-offset: 5px; }
+#viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100dvh - 60px);
+  overflow: hidden;
+}
+#deck { position: relative; flex: none; width: 1600px; height: 900px; }
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+  padding: 115px 86px 74px;
+  background: var(--paper);
+}
+.slide.active { display: block; }
+.slide-index {
+  position: absolute;
+  top: 51px;
+  left: 86px;
+  margin: 0;
+  color: var(--teal);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .12em;
+}
+h1 {
+  margin: 0 0 26px;
+  font-size: 91px;
+  line-height: .99;
+  letter-spacing: -.062em;
+  text-wrap: balance;
+}
+.lede {
+  max-width: 590px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 32px;
+  line-height: 1.29;
+  text-wrap: pretty;
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 46px;
+  height: 100%;
+}
+.copy, .illustration { min-width: 0; }
+.illustration {
+  display: block;
+  width: 100%;
+  height: 590px;
+  object-fit: contain;
+}
+.credit {
+  position: absolute;
+  left: 86px;
+  bottom: 42px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+}
+.problem { background: var(--sage); }
+.problem .split { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 70px; }
+.problem h1 { font-size: 84px; }
+.problem .illustration { height: 545px; }
 
-/* The how sequence uses editable diagrams in the same paper palette. */
-.how h1{font-size:70px;line-height:1.03;margin-bottom:0}
-.how h2{margin:0;line-height:1.14;letter-spacing:-.7px}
-.how p{margin:0;line-height:1.4}
-.how-path{position:absolute;left:80px;right:80px;bottom:83px;display:flex;align-items:center;justify-content:center;gap:24px;font-size:19px;color:#798b81}
-.how-path>span:not(.path-arrow){padding:10px 18px}
-.how-path .current{color:var(--ink);font-weight:700;background:var(--mint);clip-path:polygon(0 0,96% 0,100% 100%,4% 100%)}
-.path-arrow{font-size:20px;color:#a1b2a7}
-.participants{display:grid;grid-template-columns:repeat(5,1fr);gap:28px;margin-top:34px}
-.participant{position:relative;padding:0 10px 32px;text-align:center}
-.participant svg{display:block;width:88px;height:88px;margin:0 auto 10px}
-.participant h2{font-size:28px;min-height:68px}
-.participant p{font-size:21px;color:var(--muted);margin-top:17px}
-.participant:after{content:"";position:absolute;width:2px;height:38px;background:#aac7b9;left:50%;bottom:-20px}
-.connector-rail{margin:20px 32px 0;border-top:2px solid #aac7b9;text-align:center;position:relative}
-.connector-rail:before{content:"";display:block;height:18px;width:2px;background:#aac7b9;margin:auto}
-.connector-rail span{display:inline-block;padding:15px 40px;background:var(--mint);font-size:24px;color:var(--ink);clip-path:polygon(0 0,97% 0,100% 100%,3% 100%)}
-.media-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:62px;align-items:start}
-.media-item{text-align:center}
-.media-item svg{width:170px;height:170px;filter:drop-shadow(0 7px 5px #183e4012)}
-.media-item h2{font-size:25px;line-height:1.2;margin-top:20px;min-height:60px}
-.package-band{margin:58px auto 0;display:flex;justify-content:center;gap:80px;font-size:24px;color:var(--teal)}
-.package-band span{border-top:2px solid #b9d1c3;padding:17px 8px 0}
-.architecture-map{margin-top:42px}
-.discovery-band,.agreement-band,.enterprise-band{display:flex;align-items:center;justify-content:space-between;padding:14px 25px;font-size:22px}
-.discovery-band{background:#e3e9df;color:var(--ink);margin-bottom:22px}
-.discovery-band span,.agreement-band span,.enterprise-band span{font-size:20px;font-weight:400}
-.building-blocks{display:grid;grid-template-columns:1fr 40px 1.05fr 40px 1.2fr 40px 1.16fr;align-items:stretch;gap:12px}
-.building-block{position:relative;background:var(--mint);padding:32px 23px 25px;min-height:180px;clip-path:polygon(0 0,94% 0,100% 9%,100% 100%,0 100%)}
-.building-block h2{font-size:30px}
-.building-block p{font-size:19px;color:var(--muted);margin-top:20px}
-.join{align-self:center;text-align:center;font-size:38px;color:var(--teal)}
-.registry-block{background:var(--ink);color:var(--paper)}
-.registry-block p{color:var(--mint);margin-top:13px}
-.store-symbols{display:flex;gap:12px;margin-top:18px;height:21px}
-.store-symbols i{display:block;width:40px;height:18px;border:2px solid #9bcbb7;border-radius:50%;box-shadow:0 5px 0 -1px #183e40,0 7px 0 -1px #9bcbb7}
-.agreement-band{background:#e1e8db;margin-top:22px;color:var(--ink)}
-.enterprise-band{border-top:1px solid #c4d2c4;color:var(--muted);font-size:20px;padding-top:18px}
-.enterprise-band span{font-size:19px}
-.action-flow{display:grid;grid-template-columns:1fr 50px 1fr 50px 1fr;gap:20px;align-items:stretch;margin-top:50px}
-.action-card{background:#fffdf6;padding:30px 28px 28px;min-height:310px;position:relative;box-shadow:0 9px 0 #dfE6d9;clip-path:polygon(0 0,94% 0,100% 7%,100% 100%,0 100%)}
-.action-label{display:block;font-size:19px;font-weight:700;letter-spacing:.3px;color:var(--teal);margin-bottom:19px}
-.action-card h2{font-size:30px;margin-bottom:26px}
-.file-choice{display:flex;align-items:center;gap:18px;font-size:24px;min-height:72px}
-.file-choice small{display:block;font-size:18px;color:var(--muted);margin-top:7px}
-.file-symbol{width:37px;height:48px;flex-shrink:0;background:var(--mint);clip-path:polygon(0 0,70% 0,100% 25%,100% 100%,0 100%);border-left:6px solid var(--teal)}
-.file-symbol.result{background:#eee1cd;border-left-color:var(--coral)}
-.mock-action{background:var(--ink);color:var(--paper);padding:14px 12px;text-align:center;font-size:19px;margin-top:24px}
-.app-choice{padding:10px 13px;font-size:22px;color:var(--muted);display:flex;justify-content:space-between}
-.app-choice.selected{background:var(--mint);color:var(--ink)}
-.how-caption{text-align:center;font-size:25px;color:var(--teal);margin-top:42px!important}
-.organization-flow{display:grid;grid-template-columns:1fr 140px 1fr 140px 1fr;align-items:center;gap:25px;margin:28px 80px 0}
-.organization{text-align:center}
-.organization svg{width:145px;height:145px;filter:drop-shadow(0 7px 5px #183e4012)}
-.organization h2{font-size:27px}
-.exchange{text-align:center;color:var(--teal)}
-.exchange>span{display:block;font-size:52px;line-height:1}
-.exchange p{font-size:17px;margin-top:10px}
-.control-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;margin-top:58px}
-.control-grid>div{padding:20px 18px 0;border-top:2px solid #aac7b9}
-.control-grid h2{font-size:29px;color:var(--teal)}
-.control-grid p{font-size:22px;color:var(--muted);margin-top:13px}
-</style></head><body><noscript><style>.slide{display:block;position:relative;width:1600px;height:900px}html,body{overflow:auto}#viewport{display:block;height:auto;overflow:visible}#deck{height:auto}#controls{display:none}</style><p class="no-js">JavaScript is off. Scroll through the slides or print this file.</p></noscript><main id="viewport" aria-label="Pitch"><div id="deck"><section class="slide hero" id="slide-1" aria-labelledby="title-1" data-title="Buildings outlive software."><div class="eyebrow"><span>01</span>A vision for project information</div><div class="split"><div class="copy"><h1 id="title-1">Buildings<br>outlive<br><em>software.</em></h1><p class="lede">Their knowledge should too.</p></div><div class="visual"><img class="art" src="assets/papercut-continuity.png" alt="A continuous ribbon connects a building’s design, construction and use above an archive of project knowledge." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>A building can be used, repaired, adapted, and loved for decades. During that time, the people who designed it will move on. The software will change. The original project team may no longer exist.</p><p>Yet someone will still need to understand a decision: why that material was chosen, which calculation supported it, what was actually built. Much of that knowledge was already paid for. It should remain useful to the next person who needs it.</p><p>Imagine project information that can travel through those changes with its meaning intact. Each generation of tools could add to the work that came before. That is the future I want us to build.</p></aside></section>
-<section class="slide wide-art" id="slide-2" aria-labelledby="title-2" data-title="We work together. Our information lives apart."><div class="eyebrow"><span>02</span>Today</div><h1 id="title-2">We work together.<br><em>Our information lives apart.</em></h1><p class="lede">A shared project. A chain of separate worlds.</p><img class="art" src="assets/papercut-fragmented.png" alt="Separate workspaces hold pieces of the same building, with incomplete bridges between them." width="1536" height="1024"><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Think about an ordinary project meeting. Everyone is working on the same building. But the architect, engineer, contractor, and owner may each arrive from a different system, with a different understanding of what is current.</p><p>The shared folder or CDE is part of the picture. So are the authoring files, spreadsheets, calculations, messages, and specialist applications around it. People keep the connections alive by remembering where things came from and who to ask.</p><p>Working together should not depend on everyone choosing the same software. We need the information to remain connected across the choices people already make.</p></aside></section>
-<section class="slide split-slide" id="slide-3" aria-labelledby="title-3" data-title="Every handoff asks us to start again."><div class="eyebrow"><span>03</span>The work between the work</div><div class="split"><div class="copy"><h1 id="title-3">Every handoff<br>asks us to<br><em>start again.</em></h1><p class="lede">Find the file. Check the version. Recover the reason.</p></div><div class="visual"><img class="art" src="assets/papercut-fragmented.png" alt="Disconnected paper bridges separate drawings, models and the people who need them." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>A report arrives in your inbox. Before you can use it, you need to know which model it was based on. Then you discover a newer model. Did the relevant part change? Does the report still apply? Someone has to reconstruct the story.</p><p>That effort repeats when a consultant joins, when a project changes systems, and when the building is handed over. A file has moved, but the connection to the work around it has weakened.</p><p>Now imagine changing your software without rebuilding all those connections. Imagine a new colleague understanding the work without finding the one person who remembers it. That is the continuity we are missing.</p></aside></section>
-<section class="slide split-slide" id="slide-4" aria-labelledby="title-4" data-title="Imagine the work arriving with its story."><div class="eyebrow"><span>04</span>A different kind of handoff</div><div class="split"><div class="copy"><h1 id="title-4">Imagine the<br>work arriving<br><em>with its story.</em></h1><p class="lede">The version. The inputs. The reason.</p></div><div class="visual"><img class="art" src="assets/papercut-knowledge.png" alt="Drawings, models and reports remain visibly connected as someone selects information for the next task." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>You open a result and can follow it back to the exact files used to produce it. You can see what the result was for, who published it, and which review it has passed. A newer file can be published without erasing the version that earlier decisions relied on.</p><p>When a design changes, you have a clear starting point for checking what needs another look. The people and applications responsible for the work can compare known versions and publish an explanation of the change.</p><p>This story has to be recorded as the work happens. The files, their versions, and the links between them give us a foundation; agreed descriptions and review processes give them meaning. With those in place, the next handoff can carry understanding forward.</p></aside></section>
-<section class="slide wide-art" id="slide-5" aria-labelledby="title-5" data-title="Teams choose their tools. The work stays connected."><div class="eyebrow"><span>05</span>Choice without losing the thread</div><h1 id="title-5">Teams choose their tools.<br><em>The work stays connected.</em></h1><p class="lede">Bring contributions together. Keep their origins clear.</p><img class="art" src="assets/papercut-shared-ground.png" alt="Independent teams work above a shared foundation that connects their contributions." width="1536" height="1024"><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Imagine a coordination view assembled from contributions held by different teams. Each contribution points to a known version. The people who created it remain responsible for publishing the next one.</p><p>The meeting can refer to a saved combination of versions. Later, a new combination can be assembled and compared. Everyone can understand which contributions were in each view. A federation becomes something the team can revisit and explain.</p><p>The coordination application still needs to understand the files, units, and positions. But with a common way to obtain and identify the contributions, another compatible application can work from the same starting point. Teams gain room to choose the tools that suit their work.</p></aside></section>
-<section class="slide split-slide" id="slide-6" aria-labelledby="title-6" data-title="An idea becomes a tool for the task."><div class="eyebrow"><span>06</span>More people can shape how they work</div><div class="split"><div class="copy"><h1 id="title-6">An idea becomes<br><em>a tool for<br>the task.</em></h1><p class="lede">A question. A small application. A useful result.</p></div><div class="visual"><img class="art" src="assets/papercut-workshop.png" alt="Hands assemble small specialist applications around a model on an architectural workbench." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Someone on a project notices a repetitive task and thinks: there should be a better way to do this. Perhaps they need a quick comparison, a material check, or a view that answers one very specific question.</p><p>AI-assisted coding brings that person closer to making the tool they imagine. The next leap is letting a small application work with real project information without rebuilding the whole connection to it. It should be able to request supported files, use a known version, and return a result the rest of the team can understand.</p><p>A useful tool still needs testing and care. But its creator could spend more energy on the task itself. We could have many small, thoughtful applications around a common body of work, with useful results that remain available after the application changes.</p></aside></section>
-<section class="slide dark agent" id="slide-7" aria-labelledby="title-7" data-title="Should agents operate on software or data?"><div class="eyebrow"><span>07</span>The next participant in the workflow</div><h1 id="title-7">Should agents operate<br>on software <em>or data?</em></h1>
-<div class="agent-flow"><div><span class="small-label">Data</span><h2>Understand</h2><p>Known versions</p></div><span class="flow-arrow" aria-hidden="true">→</span><div><span class="small-label">Tools</span><h2>Act</h2><p>Defined actions</p></div><span class="flow-arrow" aria-hidden="true">→</span><div><span class="small-label">Results</span><h2>Leave a trace</h2><p>Ready for review</p></div></div>
-<p class="agent-caption">Let the agent follow the work across applications.</p><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Should an agent learn its way around each application, or work with the project information itself? Imagine asking one to explain the consequence of a design change. It needs the right versions, an understanding of their contents, and access to the operations that can answer the question.</p><p>The data gives it context. Software supplies the actions: query a model, run a calculation, or make an edit through an authoring tool. Some tasks need the application’s own engine and rules. Where supported, direct access to data and operations lets the workflow continue across applications without depending on a particular screen layout.</p><p>The result should return with a trace of the inputs and actions that produced it, ready for someone to inspect. The agent can help connect the steps. People still decide what it may do and which decisions need review.</p></aside></section>
-<section class="slide split-slide" id="slide-8" aria-labelledby="title-8" data-title="Open to the task. Closed to everything else."><div class="eyebrow"><span>08</span>Trust makes participation possible</div><div class="split"><div class="copy"><h1 id="title-8">Open to<br>the task.<br><em>Closed to<br>everything else.</em></h1><p class="lede">You decide what can be read, changed, and shared.</p></div><div class="visual"><img class="art" src="assets/papercut-access.png" alt="A person passes one chosen file through a gate while the rest of the archive remains protected." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>If a tool is checking one part of a building, it should be possible to give it the information for that task. Reading a file and changing the project are different permissions. Publishing a proposed result and accepting it are different responsibilities.</p><p>That should be understandable to the person granting access. They should know what is being shared, what the application may do with it, where its results will go, and when the permission ends. Sensitive work may need to stay within an environment the organization controls.</p><p>This takes deliberate implementation: limited access, careful handling of copies, a record of actions, and review where it matters. Openness means compatible ways of working together. The project’s information can still have clear boundaries.</p></aside></section>
-<section class="slide split-slide" id="slide-9" aria-labelledby="title-9" data-title="Every project leaves the next one wiser."><div class="eyebrow"><span>09</span>Knowledge that can accumulate</div><div class="split"><div class="copy"><h1 id="title-9">Every project<br>leaves the<br>next one<br><em>wiser.</em></h1><p class="lede">Carry forward the reasoning, not just the files.</p></div><div class="visual"><img class="art" src="assets/papercut-knowledge.png" alt="An archive of connected models and reports informs a new building design." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Imagine beginning a project with access to relevant lessons from earlier work. You could find a material decision, see the alternatives that were considered, and understand the constraints that shaped the outcome.</p><p>A later project could compare that evidence with its own situation. An application or agent could help discover useful examples while keeping their sources visible. Different units, building uses, and assumptions would still need to be understood before the comparison could be trusted.</p><p>This kind of learning depends on retaining useful context and having permission to reuse it. It can happen within a team, across an organization, or through knowledge people choose to share. The ambition is for each project to add to a body of understanding that the next project can draw on.</p></aside></section>
-<section class="slide how how-people" id="slide-10" aria-labelledby="title-10" data-title="Connect the systems people already use."><div class="eyebrow"><span>10</span>How · start with the people</div><h1 id="title-10">Connect the systems<br><em>people already use.</em></h1><div class="participants"><div class="participant"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle fill="#cf7258" cx="80" cy="37" r="18"/><path fill="#24786e" d="M48 119V83c0-21 12-31 32-31s32 10 32 31v36z"/><path fill="#183e40" d="M80 52c20 0 32 10 32 31v36H80z"/><path fill="#d8e9df" d="m39 91 43-17 42 19-43 18z"/><path fill="#fffdf5" d="m39 91 42 20v22l-42-20z"/></svg><h2>Designers &amp;<br>engineers</h2><p>Revit · Rhino<br>Analysis tools</p></div><div class="participant"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle fill="#cf7258" cx="80" cy="37" r="18"/><path fill="#24786e" d="M48 119V83c0-21 12-31 32-31s32 10 32 31v36z"/><path fill="#183e40" d="M80 52c20 0 32 10 32 31v36H80z"/><path fill="#d8e9df" d="m39 91 43-17 42 19-43 18z"/><path fill="#fffdf5" d="m39 91 42 20v22l-42-20z"/></svg><h2>Project<br>teams</h2><p>CDEs<br>Document control</p></div><div class="participant"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle fill="#cf7258" cx="80" cy="37" r="18"/><path fill="#24786e" d="M48 119V83c0-21 12-31 32-31s32 10 32 31v36z"/><path fill="#183e40" d="M80 52c20 0 32 10 32 31v36H80z"/><path fill="#d8e9df" d="m39 91 43-17 42 19-43 18z"/><path fill="#fffdf5" d="m39 91 42 20v22l-42-20z"/></svg><h2>Commercial<br>teams</h2><p>ERP<br>Procurement · planning</p></div><div class="participant"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle fill="#cf7258" cx="80" cy="37" r="18"/><path fill="#24786e" d="M48 119V83c0-21 12-31 32-31s32 10 32 31v36z"/><path fill="#183e40" d="M80 52c20 0 32 10 32 31v36H80z"/><path fill="#d8e9df" d="m39 91 43-17 42 19-43 18z"/><path fill="#fffdf5" d="m39 91 42 20v22l-42-20z"/></svg><h2>Site<br>teams</h2><p>Mobile tools<br>Inspections · progress</p></div><div class="participant"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle fill="#cf7258" cx="80" cy="37" r="18"/><path fill="#24786e" d="M48 119V83c0-21 12-31 32-31s32 10 32 31v36z"/><path fill="#183e40" d="M80 52c20 0 32 10 32 31v36H80z"/><path fill="#d8e9df" d="m39 91 43-17 42 19-43 18z"/><path fill="#fffdf5" d="m39 91 42 20v22l-42-20z"/></svg><h2>Owners &amp;<br>operators</h2><p>Asset systems<br>Maintenance · sensors</p></div></div><div class="connector-rail"><span>Supported APIs and exports</span></div><div class="how-path" aria-label="How the ecosystem works"><span class="current">Systems</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Information</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Connections</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Actions</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Control</span></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>The building brings these people together, but they work in different systems. Designers might use Revit or Rhino alongside specialist analysis tools. Project teams manage documents and approvals in a CDE. Commercial teams work with procurement, costs, and schedules. Site teams capture progress and inspections. Owners carry information into maintenance and operation.</p><p>We would connect those environments through the interfaces they support: application APIs, plugins, exports, and imports. A connector knows how to retrieve an authorized selection, preserve its source identity, and, where supported, return a result. These are examples of the systems an ecosystem could connect; each integration needs to be built and maintained.</p><p>The connection starts with a useful handoff. A model contribution, an invoice, or an inspection record can cross the boundary with enough context for the next participant to use it. People can keep the systems that support their responsibilities while participating in a wider flow of information.</p></aside></section>
-<section class="slide how how-media" id="slide-11" aria-labelledby="title-11" data-title="Different information. A common way to exchange."><div class="eyebrow"><span>11</span>How · carry the work and its context</div><h1 id="title-11">Different information.<br><em>A common way to exchange.</em></h1><div class="media-grid"><div class="media-item"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><path fill="#d8e9df" d="M20 49 79 18l58 31-59 32z"/><path fill="#24786e" d="m20 49 58 32v58l-58-31z"/><path fill="#183e40" d="m78 81 59-32v59l-59 31z"/><path fill="#f5f2e9" d="m35 69 11 6v16l-11-6zm23 12 11 6v16l-11-6zm34 8 13-7v17l-13 7zm24-13 11-6v17l-11 6z"/><path fill="#cf7258" d="m57 35 22-12 22 12-22 12z"/></svg><h2>Models</h2></div><div class="media-item"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><circle cx="40" cy="38" r="2.4" fill="#9abfaf"/><circle cx="52" cy="40" r="2.4" fill="#9abfaf"/><circle cx="64" cy="36" r="2.4" fill="#9abfaf"/><circle cx="76" cy="38" r="2.4" fill="#9abfaf"/><circle cx="88" cy="40" r="2.4" fill="#9abfaf"/><circle cx="100" cy="36" r="2.4" fill="#183e40"/><circle cx="124" cy="40" r="2.4" fill="#183e40"/><circle cx="28" cy="46" r="2.9" fill="#9abfaf"/><circle cx="40" cy="48" r="2.9" fill="#9abfaf"/><circle cx="52" cy="50" r="2.9" fill="#9abfaf"/><circle cx="64" cy="46" r="2.9" fill="#9abfaf"/><circle cx="76" cy="48" r="2.9" fill="#9abfaf"/><circle cx="88" cy="50" r="2.9" fill="#9abfaf"/><circle cx="112" cy="48" r="2.9" fill="#183e40"/><circle cx="124" cy="50" r="2.9" fill="#183e40"/><circle cx="28" cy="56" r="3.4" fill="#9abfaf"/><circle cx="40" cy="58" r="3.4" fill="#9abfaf"/><circle cx="52" cy="60" r="3.4" fill="#9abfaf"/><circle cx="64" cy="56" r="3.4" fill="#9abfaf"/><circle cx="76" cy="58" r="3.4" fill="#9abfaf"/><circle cx="100" cy="56" r="3.4" fill="#183e40"/><circle cx="112" cy="58" r="3.4" fill="#183e40"/><circle cx="124" cy="60" r="3.4" fill="#183e40"/><circle cx="28" cy="66" r="2.4" fill="#24786e"/><circle cx="40" cy="68" r="2.4" fill="#24786e"/><circle cx="52" cy="70" r="2.4" fill="#24786e"/><circle cx="64" cy="66" r="2.4" fill="#24786e"/><circle cx="88" cy="70" r="2.4" fill="#24786e"/><circle cx="100" cy="66" r="2.4" fill="#183e40"/><circle cx="112" cy="68" r="2.4" fill="#183e40"/><circle cx="124" cy="70" r="2.4" fill="#183e40"/><circle cx="28" cy="76" r="2.9" fill="#24786e"/><circle cx="40" cy="78" r="2.9" fill="#24786e"/><circle cx="52" cy="80" r="2.9" fill="#24786e"/><circle cx="76" cy="78" r="2.9" fill="#24786e"/><circle cx="88" cy="80" r="2.9" fill="#24786e"/><circle cx="100" cy="76" r="2.9" fill="#183e40"/><circle cx="112" cy="78" r="2.9" fill="#183e40"/><circle cx="124" cy="80" r="2.9" fill="#183e40"/><circle cx="28" cy="86" r="3.4" fill="#24786e"/><circle cx="40" cy="88" r="3.4" fill="#24786e"/><circle cx="64" cy="86" r="3.4" fill="#24786e"/><circle cx="76" cy="88" r="3.4" fill="#24786e"/><circle cx="88" cy="90" r="3.4" fill="#24786e"/><circle cx="100" cy="86" r="3.4" fill="#183e40"/><circle cx="112" cy="88" r="3.4" fill="#183e40"/><circle cx="124" cy="90" r="3.4" fill="#183e40"/><circle cx="28" cy="96" r="2.4" fill="#24786e"/><circle cx="52" cy="100" r="2.4" fill="#24786e"/><circle cx="64" cy="96" r="2.4" fill="#24786e"/><circle cx="76" cy="98" r="2.4" fill="#24786e"/><circle cx="88" cy="100" r="2.4" fill="#24786e"/><circle cx="100" cy="96" r="2.4" fill="#183e40"/><circle cx="112" cy="98" r="2.4" fill="#183e40"/><circle cx="40" cy="108" r="2.9" fill="#24786e"/><circle cx="52" cy="110" r="2.9" fill="#24786e"/><circle cx="64" cy="106" r="2.9" fill="#24786e"/><circle cx="76" cy="108" r="2.9" fill="#24786e"/><circle cx="88" cy="110" r="2.9" fill="#24786e"/><circle cx="100" cy="106" r="2.9" fill="#183e40"/><circle cx="124" cy="110" r="2.9" fill="#183e40"/><circle cx="28" cy="116" r="3.4" fill="#24786e"/><circle cx="40" cy="118" r="3.4" fill="#24786e"/><circle cx="52" cy="120" r="3.4" fill="#24786e"/><circle cx="64" cy="116" r="3.4" fill="#24786e"/><circle cx="76" cy="118" r="3.4" fill="#24786e"/><circle cx="88" cy="120" r="3.4" fill="#24786e"/><circle cx="112" cy="118" r="3.4" fill="#183e40"/><circle cx="124" cy="120" r="3.4" fill="#183e40"/><path fill="none" stroke="#cf7258" stroke-width="2" stroke-dasharray="3 6" d="M20 120 80 147l64-30V48L80 18 20 45z"/></svg><h2>Point clouds</h2></div><div class="media-item"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><path fill="#d8e9df" d="M23 26h104v114H23z"/><path fill="#fffdf5" d="M33 16h92l15 16v98H33z"/><path fill="#b9d5c7" d="M125 16v16h15z"/><path fill="none" stroke="#24786e" stroke-width="5" d="M49 49h73v63H49zM49 78h43V49m0 29h30m-30 0v34"/><path stroke="#cf7258" stroke-width="4" d="M49 37h43"/></svg><h2>Drawings</h2></div><div class="media-item"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><path fill="#d8e9df" d="m17 38 117-12 12 107-117 12z"/><path fill="#fffdf5" d="M24 24h116v110H24z"/><path fill="#c6ded0" d="M34 34h96v79H34z"/><circle fill="#cf7258" cx="108" cy="54" r="11"/><path fill="#24786e" d="m34 113 33-51 29 40 15-19 19 30z"/><path fill="#183e40" d="m72 113 24-32 34 32z"/></svg><h2>Images</h2></div><div class="media-item"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><path fill="#d8e9df" d="M32 24h91v118H32z"/><path fill="#fffdf5" d="M42 14h87v129l-11-6-11 6-11-6-11 6-11-6-11 6-10-6-11 6z"/><path stroke="#24786e" stroke-width="6" d="M55 39h40m-40 27h32m-32 17h32m-32 17h32"/><path stroke="#b0c8bd" stroke-width="6" d="M103 66h12m-12 17h12m-12 17h12"/><path stroke="#cf7258" stroke-width="6" d="M84 115h31"/></svg><h2>Invoices</h2></div><div class="media-item"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><path fill="#d8e9df" d="M28 29h100v112H28z"/><rect fill="#fffdf5" x="38" y="22" width="94" height="110" rx="4"/><rect fill="#183e40" x="64" y="13" width="42" height="21" rx="5"/><path fill="none" stroke="#24786e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="m52 55 6 6 11-13m-17 31 6 6 11-13m-17 31 6 6 11-13"/><path stroke="#b0c8bd" stroke-width="5" d="M81 56h34M81 80h34M81 104h34"/></svg><h2>Inspection records</h2></div></div><div class="package-band"><span>Keep the original</span><span>Name the version</span><span>Carry the context</span></div><div class="how-path" aria-label="How the ecosystem works"><span class="">Systems</span><span class="path-arrow" aria-hidden="true">→</span><span class="current">Information</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Connections</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Actions</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Control</span></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>People recognize the information through the work it represents: a model, a point cloud, a drawing, an image, an invoice, an inspection record. Each can be published in a package that identifies its contents and preserves the relevant context. A package might contain one item or several related files.</p><p>Keep the original where permissions allow, and add useful representations when a workflow needs them. A model may have geometry for viewing and tables for analysis. An invoice may have its original document and a validated extraction. The connection between the original and the derived information should remain clear, including the process and assumptions used.</p><p>OCI provides a generic way to package and distribute that content. An agreed, versioned description tells a receiving application what the package means and which formats it contains. Units, identifiers, relationships, and suitable uses need to be stated. For example, an application might understand IFC, GLB, or Parquet; another might use PDF, CSV, or JSON. Compatibility depends on the supported description and formats, rather than the familiar category name alone.</p></aside></section>
-<section class="slide how how-architecture" id="slide-12" aria-labelledby="title-12" data-title="A few shared building blocks."><div class="eyebrow"><span>12</span>How · connect independently built parts</div><h1 id="title-12">A few shared<br><em>building blocks.</em></h1>
-<div class="architecture-map">
-<div class="discovery-band"><strong>Discovery &amp; app directory</strong><span>Find information · match capabilities</span></div>
-<div class="building-blocks">
-<div class="building-block"><h2>Existing<br>systems</h2><p>Source information</p></div><span class="join" aria-hidden="true">↔</span>
-<div class="building-block"><h2>Connectors<br>&amp; adapters</h2><p>Read · map · return</p></div><span class="join" aria-hidden="true">↔</span>
-<div class="building-block registry-block"><h2>OCI stores</h2><div class="store-symbols" aria-hidden="true"><i></i><i></i><i></i></div><p>Independently operated</p></div><span class="join" aria-hidden="true">↔</span>
-<div class="building-block"><h2>Apps · engines<br>&amp; agents</h2><p>Understand · act</p></div>
+.dark {
+  color: var(--paper);
+  background: #173a36;
+  --muted: #ccdbcb;
+  --teal: #d5edab;
+}
+.standard h1 { max-width: 1000px; margin-top: 46px; }
+.standard .lede { max-width: 860px; }
+.exchange-flow {
+  display: grid;
+  grid-template-columns: 1fr 58px 1fr 58px 1fr;
+  gap: 26px;
+  align-items: start;
+  margin-top: 110px;
+}
+.exchange-step { padding-top: 22px; border-top: 1px solid #799589; }
+.exchange-step h2 { margin: 0 0 13px; font-size: 35px; letter-spacing: -.035em; }
+.exchange-step p { margin: 0; color: var(--muted); font-size: 23px; line-height: 1.35; }
+.exchange-arrow { margin-top: 19px; color: var(--lime); font-size: 35px; }
+
+.loop h1 { font-size: 75px; }
+.loop .illustration { height: 600px; }
+.loop-steps {
+  display: grid;
+  gap: 12px;
+  margin: 36px 0 0;
+  padding: 0 0 0 18px;
+  border-left: 2px solid #9ebbac;
+  list-style: none;
+  color: var(--teal);
+  font-size: 23px;
+  line-height: 1.36;
+}
+.example { background: #edf0e4; }
+.example h1 { font-size: 86px; }
+.example .illustration { height: 590px; }
+.slide-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 30px;
+  margin-top: 36px;
+  color: var(--teal);
+  font-size: 22px;
+  font-weight: 700;
+}
+.closing .split { grid-template-columns: minmax(0, .93fr) minmax(0, 1.07fr); gap: 74px; }
+.closing h1 { font-size: 85px; }
+.prompt {
+  align-self: center;
+  padding: 46px;
+  color: var(--ink);
+  background: var(--sage);
+}
+.prompt h2 { margin: 0 0 26px; font-size: 23px; }
+.prompt-excerpt { margin: 0 0 30px; font-size: 34px; line-height: 1.25; letter-spacing: -.025em; }
+.prompt-excerpt mark { color: #205f50; background: transparent; }
+.prompt #copy-prompt {
+  padding: 14px 23px;
+  border: 0;
+  color: var(--paper);
+  background: #20594d;
+  font-weight: 700;
+  font-size: 20px;
+}
+.prompt #copy-prompt:hover { background: #163f36; }
+.prompt small { margin-left: 15px; color: #35594f; font-size: 18px; }
+
+#controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  height: 60px;
+  padding: 0 24px;
+  color: #e3ece2;
+  font-size: 13px;
+}
+.group { display: flex; align-items: center; gap: 9px; }
+#controls button {
+  padding: 7px 11px;
+  border: 1px solid #527069;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  white-space: nowrap;
+}
+#controls button:hover { background: #294b45; }
+#controls button:disabled { opacity: .33; cursor: default; }
+#position { min-width: 55px; text-align: center; font-variant-numeric: tabular-nums; }
+.keys { margin-left: 9px; color: #a9bcb0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.progress {
+  position: fixed;
+  left: 0;
+  bottom: 57px;
+  z-index: 2;
+  height: 3px;
+  width: 0;
+  background: var(--lime);
+  transition: width 150ms linear;
+}
+#notes-panel {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 60px;
+  z-index: 3;
+  height: 250px;
+  overflow: auto;
+  padding: 20px 34px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.55;
+}
+#notes-panel h2 { margin: 0 0 12px; font-size: 20px; }
+#notes-panel p { max-width: 1050px; margin: 0 0 12px; }
+#notes-panel pre { max-width: 1050px; white-space: pre-wrap; overflow-wrap: anywhere; }
+#notes-panel a { color: #21685a; }
+body.notes-open #notes-panel { display: block; }
+body.notes-open #viewport { height: calc(100dvh - 310px); }
+body.notes-open .progress { bottom: 307px; }
+#help { max-width: 530px; padding: 32px; border: 0; background: var(--paper); color: var(--ink); }
+#help::backdrop { background: #102d30aa; }
+#help h2 { margin-top: 0; }
+#help dl { display: grid; grid-template-columns: 155px 1fr; gap: 16px; }
+#help dd { margin: 0; }
+#help button { padding: 8px 18px; border: 0; background: var(--ink); color: var(--paper); }
+
+@media (max-width: 800px) {
+  .keys { display: none; }
+  #controls { padding: 0 10px; gap: 8px; }
+  .group { gap: 6px; }
+  #controls button { padding: 7px 8px; }
+  #notes-panel { padding: 14px 18px; }
+}
+@media (max-width: 530px) {
+  #fullscreen, #print, #help-open { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress { transition: none; }
+}
+@page { size: 1600px 900px; margin: 0; }
+@media print {
+  html, body { width: 1600px; height: auto; overflow: visible; background: var(--paper); }
+  #viewport, body.notes-open #viewport { display: block; width: 1600px; height: auto; overflow: visible; }
+  #deck { width: 1600px; height: auto; transform: none !important; }
+  .slide, .slide.active {
+    display: block;
+    position: relative;
+    width: 1600px;
+    height: 900px;
+    break-after: page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .slide:last-child { break-after: auto; }
+  #controls, #notes-panel, .progress, #live, #help, #copy-status { display: none !important; }
+}
+</style>
+</head>
+<body>
+<main id="viewport" aria-label="Subsoil pitch">
+<div id="deck">
+<section class="slide cover active" id="slide-1" aria-labelledby="title-1" data-title="Building tools is only half the job">
+  <p class="slide-index" aria-label="Slide 1">01</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-1">Building tools is only half the job</h1>
+      <p class="lede">A small tool still needs the project data people already work with.</p>
+    </div>
+    <img class="illustration" src="assets/pitch-tool-and-models.png" width="1536" height="1024" alt="A laptop beside a structural model and a separate duct model.">
+  </div>
+  <p class="credit">Ahmad Saleem Z</p>
+  <aside class="speaker-note" hidden>
+<p>Say I want to check whether the openings in a structural model line up with the services model. With AI coding tools, it’s easier to put together a small app for that check. Then I have to get both models into it. When either one changes, the app needs a way to get the new version and the team needs to know which versions it checked.</p>
+  </aside>
+</section>
+
+<section class="slide problem" id="slide-2" aria-labelledby="title-2" data-title="Two apps need the same data">
+  <p class="slide-index" aria-label="Slide 2">02</p>
+  <div class="split">
+    <img class="illustration" src="assets/pitch-separated-files.png" width="1536" height="1024" alt="Separate trays of structural and services drawings with a marked-up copy between them.">
+    <div class="copy">
+      <h1 id="title-2">Two apps need the same data</h1>
+      <p class="lede">Each new tool can mean another export, another copy, and another place to check what changed.</p>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>The structural model is in one system and the services model is in another. Each system has its own way to get data out. I can export both and run the check today. Next week I have to find the right revisions again, and the result may end up in a third place. If the platform charges separately for API access, the team pays again to work with data it already paid to create and store.</p>
+<p>What I want is for a second app to pick up the data the first app used, do its part, and make the result available to whoever needs it next.</p>
+  </aside>
+</section>
+
+<section class="slide standard dark" id="slide-3" aria-labelledby="title-3" data-title="Use OCI to exchange project data">
+  <p class="slide-index" aria-label="Slide 3">03</p>
+  <h1 id="title-3">Use OCI to exchange project data</h1>
+  <p class="lede">An existing standard for sharing published versions across tools and organizations.</p>
+  <div class="exchange-flow">
+    <div class="exchange-step">
+      <h2>Choose a version</h2>
+      <p>Pass its exact reference to an app.</p>
+    </div>
+    <span class="exchange-arrow" aria-hidden="true">→</span>
+    <div class="exchange-step">
+      <h2>Open it in the app</h2>
+      <p>Read the selected version from its registry.</p>
+    </div>
+    <span class="exchange-arrow" aria-hidden="true">→</span>
+    <div class="exchange-step">
+      <h2>Publish the result</h2>
+      <p>Write to a registry you have access to.</p>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>My proposal is to use OCI, the Open Container Initiative standards used to package and distribute container images. The same standards can carry project files. An app can open a specific published version and publish an output using the same kind of registry API, even when the teams involved run different systems. <a href="https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md">OCI packaging specification</a> · <a href="https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md">OCI distribution specification</a></p>
+<p>The apps still need to agree on what’s in the package and how to interpret it. Subsoil’s proposed handoff lets a CDE tell an app which version to open. The app gets its own access and reads that version from the registry. A connection to the source system’s API can handle live queries and approved edits to the source. <a href="https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on">Subsoil architecture guide</a></p>
+  </aside>
+</section>
+
+<section class="slide loop" id="slide-4" aria-labelledby="title-4" data-title="One team’s output is the next team’s input">
+  <p class="slide-index" aria-label="Slide 4">04</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-4">One team’s output is the next team’s input</h1>
+      <p class="lede">Teams can iterate on shared data from the tools and systems they already use.</p>
+      <ul class="loop-steps">
+        <li>Services team proposes an opening change.</li>
+        <li>Structural team publishes a revised model.</li>
+        <li>Services team checks the new version.</li>
+      </ul>
+    </div>
+    <img class="illustration" src="assets/pitch-coordination-loop.png" width="1536" height="1024" alt="Two engineers check a duct route against an opening in a structural model.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>The services team opens the structural model in its own tool and sends back a proposed change to an opening, with the geometry and the clearance it needs. The structural engineer reviews it in their own tool and publishes an updated structural model. That version is the starting point for the services team’s next check.</p>
+<p>Each organization can keep its own system and decide what it shares. Each tool can keep its own way of working with the data. If an agent helps run the check, it can work from those same versions and return its findings for someone to review.</p>
+  </aside>
+</section>
+
+<section class="slide example" id="slide-5" aria-labelledby="title-5" data-title="IFClite and Subsoil">
+  <p class="slide-index" aria-label="Slide 5">05</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-5">IFClite and Subsoil</h1>
+      <p class="lede">IFC models can travel through a registry. Subsoil shows how an app can open an exact version.</p>
+      <div class="slide-links">
+        <a href="https://ifclite.dev/docs/guide/local-registry/">IFClite registry guide</a>
+        <a href="https://files.lab.madsolame.com/explore">Try the Subsoil demo</a>
+      </div>
+    </div>
+    <img class="illustration" src="assets/pitch-ifc-model.png" width="1536" height="1024" alt="A cutaway model showing an orange ventilation duct passing through a floor opening.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>IFClite gives us an example with real model data. Its experimental registry support lets an IFC tool open a model from an OCI registry. The proposed handoff adds a way for a project browser to pass the exact selected version to an app. <a href="https://ifclite.dev/docs/guide/local-registry/">IFClite model registry documentation</a></p>
+<p>You can try the handoff in Subsoil with a sample file. Open it in the separate starter editor, make a change, and publish a new version. Both versions are then visible back in Subsoil.</p>
+  </aside>
+</section>
+
+<section class="slide closing dark" id="slide-6" aria-labelledby="title-6" data-title="Build an app for your own workflow">
+  <p class="slide-index" aria-label="Slide 6">06</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-6">Build an app for your own workflow</h1>
+      <p class="lede">Test it in Subsoil, then try a registry you control.</p>
+      <div class="slide-links">
+        <a href="https://files.lab.madsolame.com/explore">Open the Subsoil demo</a>
+        <a href="https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on">Read the handoff guide</a>
+      </div>
+    </div>
+    <div class="prompt">
+      <h2>For your coding agent</h2>
+      <p class="prompt-excerpt">Using the OCI handoff protocol proposed by Subsoil, build or adapt an app that <mark>[describe what you want the app to do]</mark>.</p>
+      <button type="button" id="copy-prompt">Copy prompt</button>
+      <small id="copy-status" role="status"></small>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>Pick a task you actually want an app to do. Try it with a sample in Subsoil so you can see it open a specific version and, if it writes a result, publish that result where you choose. If your team wants to operate its own registry, try the same app with that connection and your own access rules.</p>
+<p>Copy this prompt to your coding agent and replace the bracketed text with your use case.</p>
+<pre><code>Using the OCI handoff protocol proposed by Subsoil, build or adapt an app that [describe what you want the app to do].
+
+Use these guides for the handoff and the local test.
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/DEVELOPMENT.md
+
+Help me register the app in a Subsoil demo workspace and test it locally at http://localhost:5173. Use a sample the app understands and open the exact version selected in Subsoil. If the app produces a result, let me publish it as a new version to a repository I select and can write to.
+
+Keep the registry and sign-in settings configurable. Show me what I would need to connect the same app to an OCI registry my team hosts or controls.</code></pre>
+<p><a href="https://files.lab.madsolame.com/explore">Open the Subsoil demo</a></p>
+  </aside>
+</section>
 </div>
-<div class="agreement-band"><strong>Content agreements</strong><span>Formats · identifiers · relationships</span></div>
-<div class="enterprise-band"><strong>Enterprise services</strong><span>Identity · policy · audit · operations</span></div>
-</div><div class="how-path" aria-label="How the ecosystem works"><span class="">Systems</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Information</span><span class="path-arrow" aria-hidden="true">→</span><span class="current">Connections</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Actions</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Control</span></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>These are the pieces we would build and operate. Connectors understand the source system and map a selected handoff into an agreed publication. Independently operated OCI stores retain and deliver exact versions. Applications, calculation engines, and agents use the information and publish new versions or linked results.</p><p>OCI means Open Container Initiative. Its specifications can carry project files as well as software artifacts. They provide packaging, content identity, distribution, and discovery of related artifacts. The ecosystem supplies the domain agreements and services above that foundation: content descriptions, relationships between several inputs, application discovery, search, permissions, and workflow. A directory can be configured by each organization; it need not be a single central marketplace.</p><p>A connector does not turn an ERP database into a file store. Live queries and transactions continue through the source system’s supported APIs. Selected snapshots and outputs can become publications, while an approved write-back uses a defined API operation. An application can participate directly or through an adapter. The interfaces between these blocks let different teams implement and improve their own parts.</p></aside></section>
-<section class="slide how how-actions" id="slide-13" aria-labelledby="title-13" data-title="Import from. Open with. Publish back."><div class="eyebrow"><span>13</span>How · make the connection feel familiar</div><h1 id="title-13">Import from.<br><em>Open with. Publish back.</em></h1>
-<div class="action-flow">
-<div class="action-card"><span class="action-label">Import from…</span><h2>Project CDE</h2><div class="file-choice"><span class="file-symbol" aria-hidden="true"></span><span>Model <small>Version 12</small></span></div><div class="mock-action">Import selected version</div></div>
-<span class="join" aria-hidden="true">→</span>
-<div class="action-card"><span class="action-label">Open with…</span><h2>Compatible apps</h2><div class="app-choice">Model viewer</div><div class="app-choice selected">Quantity checker <span aria-hidden="true">✓</span></div><div class="app-choice">Custom app</div></div>
-<span class="join" aria-hidden="true">→</span>
-<div class="action-card"><span class="action-label">Publish back…</span><h2>Project CDE</h2><div class="file-choice"><span class="file-symbol result" aria-hidden="true"></span><span>Quantity report <small>Linked to model v12</small></span></div><div class="mock-action">Review &amp; publish</div></div>
-</div>
-<p class="how-caption">Same version in. Linked result out.</p><div class="how-path" aria-label="How the ecosystem works"><span class="">Systems</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Information</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Connections</span><span class="path-arrow" aria-hidden="true">→</span><span class="current">Actions</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Control</span></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Here is what those building blocks could feel like in everyday use. Import from lets someone choose a connected source and an authorized version. The connector records where it came from and prepares the publication. Open with offers applications that declare support for its contents and for the action the person is allowed to perform.</p><p>The selected application receives the exact input reference and limited access. A quantity checker can read that version and produce a report tied to it. The report can be reviewed, published as a linked result, and returned to the CDE through its connector where the source system supports that operation. A changed authoring model would be a new version, with its own review and publishing rules.</p><p>These are proposed interface moments that can live inside a CDE, an application, or a project browser. The same pattern can support an inspection tool, an invoice checker, or an agent using a defined operation. Application matching, launch, authentication, result publication, and source write-back need explicit contracts and tested integrations. A familiar action becomes the front door to that machinery.</p></aside></section>
-<section class="slide how how-enterprise" id="slide-14" aria-labelledby="title-14" data-title="Connect organizations. Keep control."><div class="eyebrow"><span>14</span>How · operate across enterprise boundaries</div><h1 id="title-14">Connect organizations.<br><em>Keep control.</em></h1>
-<div class="organization-flow">
-<div class="organization"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><ellipse fill="#b9d5c7" cx="80" cy="39" rx="50" ry="20"/><path fill="#24786e" d="M30 39v72c0 12 22 22 50 22s50-10 50-22V39c0 12-22 22-50 22S30 51 30 39z"/><path fill="none" stroke="#d8e9df" stroke-width="3" d="M30 65c0 12 22 22 50 22s50-10 50-22M30 90c0 12 22 22 50 22s50-10 50-22"/></svg><h2>Design team</h2></div><div class="exchange"><span aria-hidden="true">↔</span><p>Authorized<br>exchange</p></div>
-<div class="organization"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><ellipse fill="#b9d5c7" cx="80" cy="39" rx="50" ry="20"/><path fill="#24786e" d="M30 39v72c0 12 22 22 50 22s50-10 50-22V39c0 12-22 22-50 22S30 51 30 39z"/><path fill="none" stroke="#d8e9df" stroke-width="3" d="M30 65c0 12 22 22 50 22s50-10 50-22M30 90c0 12 22 22 50 22s50-10 50-22"/></svg><h2>Delivery team</h2></div><div class="exchange"><span aria-hidden="true">↔</span><p>Authorized<br>exchange</p></div>
-<div class="organization"><svg viewBox="0 0 160 160" aria-hidden="true" focusable="false"><ellipse fill="#b9d5c7" cx="80" cy="39" rx="50" ry="20"/><path fill="#24786e" d="M30 39v72c0 12 22 22 50 22s50-10 50-22V39c0 12-22 22-50 22S30 51 30 39z"/><path fill="none" stroke="#d8e9df" stroke-width="3" d="M30 65c0 12 22 22 50 22s50-10 50-22M30 90c0 12 22 22 50 22s50-10 50-22"/></svg><h2>Owner</h2></div>
-</div>
-<div class="control-grid"><div><h2>Identity</h2><p>Company sign-in</p></div><div><h2>Policy</h2><p>Limited access</p></div><div><h2>Traceability</h2><p>Sources &amp; audit</p></div><div><h2>Resilience</h2><p>Monitor &amp; recover</p></div></div><div class="how-path" aria-label="How the ecosystem works"><span class="">Systems</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Information</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Connections</span><span class="path-arrow" aria-hidden="true">→</span><span class="">Actions</span><span class="path-arrow" aria-hidden="true">→</span><span class="current">Control</span></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Each organization can choose its hosting, identity provider, applications, and operational responsibilities. Exchanges happen through agreed connections and permissions. A delivery team might publish a contribution that the owner receives in an environment the owner operates. The content can retain its exact identity and source context across that transfer.</p><p>A production deployment would combine company sign-in, project and application access rules, short-lived credentials, review controls, and audit records. It would also need monitoring, reliable background jobs, safe retries, backups, recovery procedures, retention policies, and an availability design suited to the organization. Those are concrete services to implement, integrate, and test around the exchange foundation.</p><p>Authorization controls what a connection can read or publish. Receiving organizations also need agreements for the information they retain, because withdrawing access cannot recall an existing copy. Traceable provenance, integrity checks, and appropriate publisher verification help people assess what they receive. Enterprise readiness comes from operating all these responsibilities together; it is a target for the ecosystem rather than a property that OCI grants automatically.</p></aside></section>
-<section class="slide continuity-slide" id="slide-15" aria-labelledby="title-15" data-title="Change the tools. Keep the knowledge."><div class="eyebrow"><span>15</span>Across the life of a building</div><h1 id="title-15">Change the tools.<br><em>Keep the knowledge.</em></h1>
-<div class="life-flow"><span>Design</span><span class="flow-arrow" aria-hidden="true">→</span><span>Build</span><span class="flow-arrow" aria-hidden="true">→</span><span>Use</span><span class="flow-arrow" aria-hidden="true">→</span><span>Adapt</span></div>
-<p class="life-caption">New teams. New questions. A story that continues.</p><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Return to the building we started with. Years after handover, a new team needs to adapt it. Imagine them finding the relevant information, following the decisions behind it, and bringing it into the tools they use today.</p><p>Their new work adds another chapter. The original design, the construction changes, the evidence from use, and the adaptation can remain connected. Maintaining that continuity takes care: preserving the information, keeping formats usable, and carrying its context forward.</p><p>That is the promise worth working toward. People gain freedom to improve their tools because the value of their work can endure beyond any one of them.</p></aside></section>
-<section class="slide closing" id="slide-16" aria-labelledby="title-16" data-title="What could we build if the work stayed connected?"><div class="eyebrow"><span>16</span>An invitation to imagine</div><div class="split"><div class="copy"><h1 id="title-16">What could<br>we build if<br>the work stayed<br><em>connected?</em></h1><p class="lede">Start with one handoff worth improving.</p></div><div class="visual"><img class="art" src="assets/papercut-workshop.png" alt="People shape new tools around a shared body of architectural work." width="1536" height="1024"></div></div><footer class="slide-footer"><span>Ahmad Saleem Z</span><span>Project information that lasts</span></footer><aside class="speaker-note" hidden><p>Think of a handoff in your own work that breaks the thread. A calculation whose inputs are hard to recover. A model that is difficult to bring together with someone else’s contribution. A lesson that never reaches the next project.</p><p>What would become possible if that connection survived? Who could use the work next? What could they add? What new tool would be worth building?</p><p>That is where we can begin: make one useful connection between independent tools, carry its context forward, and let others build on it. The larger vision is an industry where our knowledge accumulates and our choices expand.</p></aside></section></div></main><nav id="controls" aria-label="Pitch controls"><div class="group"><a href="speaker-notes.html" target="_blank" rel="noopener" style="color:inherit;text-underline-offset:3px;white-space:nowrap">Notes ↗</a><span class="keys">← → navigate · N notes</span></div><div class="group"><button id="prev" aria-label="Previous slide">←</button><span id="position" aria-label="Slide position"></span><button id="next" aria-label="Next slide">→</button></div><div class="group"><button id="notes-toggle" aria-pressed="false" aria-controls="notes-panel">Notes</button><button id="fullscreen" aria-label="Toggle fullscreen">Fullscreen</button><button id="print">Print</button><button id="help-open" aria-label="Keyboard shortcuts">?</button></div></nav><div class="progress" aria-hidden="true"></div><div id="live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div><aside id="notes-panel" aria-label="Notes" aria-hidden="true"><h2 id="notes-title"></h2><div id="notes-content"></div></aside><dialog id="help" aria-labelledby="help-title"><h2 id="help-title">Presenting this deck</h2><dl><dt>← / → or Page Up / Down</dt><dd>Previous / next slide</dd><dt>Space / Shift + Space</dt><dd>Next / previous slide</dd><dt>Home / End</dt><dd>First / last slide</dd><dt>N</dt><dd>Toggle notes</dd><dt>F</dt><dd>Toggle fullscreen</dd><dt>?</dt><dd>Show these shortcuts</dd><dt>Print</dt><dd>All slides, one per page</dd></dl><p>Swipe horizontally on touch screens. The pitch runs offline.</p><button id="help-close">Close</button></dialog><script>
+</main>
+<nav id="controls" aria-label="Pitch controls">
+  <div class="group"><a href="preview.html">Overview</a><span class="keys">← → navigate · N notes</span></div>
+  <div class="group">
+    <button id="prev" aria-label="Previous slide">←</button>
+    <span id="position" aria-label="Slide position"></span>
+    <button id="next" aria-label="Next slide">→</button>
+  </div>
+  <div class="group">
+    <button id="notes-toggle" aria-pressed="false" aria-controls="notes-panel">Notes</button>
+    <button id="fullscreen">Fullscreen</button>
+    <button id="print">Print</button>
+    <button id="help-open" aria-label="Keyboard shortcuts">?</button>
+  </div>
+</nav>
+<div class="progress" aria-hidden="true"></div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+<aside id="notes-panel" aria-label="Speaker notes" aria-hidden="true">
+  <h2 id="notes-title"></h2>
+  <div id="notes-content"></div>
+  <a href="speaker-notes.html">Read all speaker notes</a>
+</aside>
+<dialog id="help" aria-labelledby="help-title">
+  <h2 id="help-title">Presenting this deck</h2>
+  <dl>
+    <dt>← → or Page Up / Down</dt><dd>Previous or next slide</dd>
+    <dt>Space / Shift + Space</dt><dd>Next or previous slide</dd>
+    <dt>Home / End</dt><dd>First or last slide</dd>
+    <dt>N</dt><dd>Toggle speaker notes</dd>
+    <dt>F</dt><dd>Toggle fullscreen</dd>
+  </dl>
+  <button id="help-close">Close</button>
+</dialog>
+<script>
 (() => {
   'use strict';
-  const slides=[...document.querySelectorAll('.slide')], deck=document.getElementById('deck'), viewport=document.getElementById('viewport');
-  const position=document.getElementById('position'), live=document.getElementById('live'), prev=document.getElementById('prev'), next=document.getElementById('next'), notesButton=document.getElementById('notes-toggle');
-  let current=0, touchStart=null;
-  function fit(){const scale=Math.min(viewport.clientWidth/1600,viewport.clientHeight/900);deck.style.transform=`scale(${scale})`;}
-  function hashIndex(){const m=location.hash.match(/^#(?:slide-)?(\d+)$/);return m?Math.max(0,Math.min(slides.length-1,Number(m[1])-1)):0;}
-  function notes(){document.getElementById('notes-title').textContent=`${current+1}. ${slides[current].dataset.title}`;document.getElementById('notes-content').innerHTML=slides[current].querySelector('.speaker-note').innerHTML;}
-  function show(index, updateHash=true){current=Math.max(0,Math.min(slides.length-1,index));slides.forEach((s,i)=>{const active=i===current;s.classList.toggle('active',active);s.setAttribute('aria-hidden',String(!active));s.inert=!active;});position.textContent=`${String(current+1).padStart(2,'0')} / ${slides.length}`;prev.disabled=current===0;next.disabled=current===slides.length-1;document.querySelector('.progress').style.width=`${(current+1)/slides.length*100}%`;live.textContent=`Slide ${current+1} of ${slides.length}: ${slides[current].dataset.title}`;document.title=`${current+1}/${slides.length} · ${slides[current].dataset.title} · Pitch`;if(updateHash)history.replaceState(null,'',`#slide-${current+1}`);notes();}
-  function toggleNotes(){const open=document.body.classList.toggle('notes-open');notesButton.setAttribute('aria-pressed',String(open));document.getElementById('notes-panel').setAttribute('aria-hidden',String(!open));notes();fit();}
-  async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{live.textContent='Fullscreen is unavailable in this browser. Use your browser’s fullscreen command.';}}
-  prev.addEventListener('click',()=>show(current-1));next.addEventListener('click',()=>show(current+1));notesButton.addEventListener('click',toggleNotes);document.getElementById('fullscreen').addEventListener('click',fullscreen);document.getElementById('print').addEventListener('click',()=>window.print());document.getElementById('help-open').addEventListener('click',()=>document.getElementById('help').showModal());document.getElementById('help-close').addEventListener('click',()=>document.getElementById('help').close());
-  document.addEventListener('keydown',e=>{if(document.getElementById('help').open||e.altKey||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const key=e.key;if(['ArrowRight','ArrowDown','PageDown',' '].includes(key)){if(key===' '&&e.target.closest('button,a'))return;e.preventDefault();show(current+(e.shiftKey?-1:1));}else if(['ArrowLeft','ArrowUp','PageUp'].includes(key)){e.preventDefault();show(current-1);}else if(key==='Home'){e.preventDefault();show(0);}else if(key==='End'){e.preventDefault();show(slides.length-1);}else if(key.toLowerCase()==='n')toggleNotes();else if(key.toLowerCase()==='f')fullscreen();else if(key==='?')document.getElementById('help').showModal();});
-  viewport.addEventListener('touchstart',e=>{if(e.touches.length===1)touchStart={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});viewport.addEventListener('touchend',e=>{if(!touchStart)return;const dx=e.changedTouches[0].clientX-touchStart.x,dy=e.changedTouches[0].clientY-touchStart.y;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5)show(current+(dx<0?1:-1));touchStart=null;},{passive:true});
-  const originalInert=new Map();window.addEventListener('beforeprint',()=>{slides.forEach(s=>{originalInert.set(s,s.inert);s.inert=false;s.removeAttribute('aria-hidden');});});window.addEventListener('afterprint',()=>{show(current,false);});
-  window.addEventListener('resize',fit);window.addEventListener('hashchange',()=>show(hashIndex(),false));show(hashIndex(),false);fit();
+  const element = id => document.getElementById(id);
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const viewport = element('viewport');
+  const deck = element('deck');
+  const notesButton = element('notes-toggle');
+  const notesPanel = element('notes-panel');
+  const help = element('help');
+  const previous = element('prev');
+  const next = element('next');
+  let current = 0;
+  let touchStart = null;
+
+  function fit() {
+    const scale = Math.min(viewport.clientWidth / 1600, viewport.clientHeight / 900);
+    deck.style.transform = `scale(${scale})`;
+  }
+
+  function hashIndex() {
+    const match = location.hash.match(/^#(?:slide-)?(\d+)$/);
+    return match ? Number(match[1]) - 1 : 0;
+  }
+
+  function show(index, updateHash = true) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    const slide = slides[current];
+    for (const candidate of slides) {
+      const active = candidate === slide;
+      candidate.classList.toggle('active', active);
+      candidate.setAttribute('aria-hidden', String(!active));
+      candidate.inert = !active;
+    }
+    const number = current + 1;
+    const title = slide.dataset.title;
+    element('position').textContent = `${String(number).padStart(2, '0')} / ${slides.length}`;
+    element('live').textContent = `Slide ${number} of ${slides.length}. ${title}`;
+    element('notes-title').textContent = title;
+    element('notes-content').innerHTML = slide.querySelector('.speaker-note').innerHTML;
+    document.title = `${number}/${slides.length} · ${title} · Pitch`;
+    document.querySelector('.progress').style.width = `${number / slides.length * 100}%`;
+    previous.disabled = current === 0;
+    next.disabled = current === slides.length - 1;
+    if (updateHash) history.replaceState(null, '', `#slide-${number}`);
+  }
+
+  function toggleNotes() {
+    const open = document.body.classList.toggle('notes-open');
+    notesButton.setAttribute('aria-pressed', String(open));
+    notesPanel.setAttribute('aria-hidden', String(!open));
+    fit();
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      element('live').textContent = 'Fullscreen is unavailable in this browser.';
+    }
+  }
+
+  async function copyPrompt() {
+    const prompt = element('slide-6').querySelector('.speaker-note pre').textContent.trim();
+    const status = element('copy-status');
+    try {
+      await navigator.clipboard.writeText(prompt);
+      status.textContent = 'Copied';
+    } catch {
+      const field = document.createElement('textarea');
+      field.value = prompt;
+      field.className = 'sr-only';
+      document.body.append(field);
+      field.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch {}
+      field.remove();
+      element('copy-prompt').focus();
+      status.textContent = copied ? 'Copied' : 'Copy from the speaker notes.';
+    }
+  }
+
+  previous.addEventListener('click', () => show(current - 1));
+  next.addEventListener('click', () => show(current + 1));
+  notesButton.addEventListener('click', toggleNotes);
+  element('fullscreen').addEventListener('click', toggleFullscreen);
+  element('print').addEventListener('click', () => window.print());
+  element('help-open').addEventListener('click', () => help.showModal());
+  element('help-close').addEventListener('click', () => help.close());
+  element('copy-prompt').addEventListener('click', copyPrompt);
+  document.addEventListener('keydown', event => {
+    if (help.open || event.altKey || event.ctrlKey || event.metaKey ||
+        /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+    switch (event.key) {
+      case ' ':
+        if (event.target.closest('button, a')) return;
+        event.preventDefault();
+        show(current + (event.shiftKey ? -1 : 1));
+        break;
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown':
+        event.preventDefault();
+        show(current + 1);
+        break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+        event.preventDefault();
+        show(current - 1);
+        break;
+      case 'Home': event.preventDefault(); show(0); break;
+      case 'End': event.preventDefault(); show(slides.length - 1); break;
+      case 'n': case 'N': toggleNotes(); break;
+      case 'f': case 'F': toggleFullscreen(); break;
+      case '?': help.showModal(); break;
+    }
+  });
+  viewport.addEventListener('touchstart', event => {
+    if (event.touches.length === 1) touchStart = event.touches[0];
+  }, {passive: true});
+  viewport.addEventListener('touchend', event => {
+    if (!touchStart) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStart.clientX;
+    const dy = touch.clientY - touchStart.clientY;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5) show(current + (dx < 0 ? 1 : -1));
+    touchStart = null;
+  }, {passive: true});
+  window.addEventListener('beforeprint', () => {
+    for (const slide of slides) {
+      slide.inert = false;
+      slide.removeAttribute('aria-hidden');
+    }
+  });
+  window.addEventListener('afterprint', () => show(current, false));
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => show(hashIndex(), false));
+  show(hashIndex(), false);
+  fit();
 })();
-</script></body></html>
+</script>
+</body>
+</html>

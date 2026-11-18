@@ -7,10 +7,12 @@ validator could read that exact model and publish a report to a repository
 the team has chosen. Each organization can operate its own registry or use
 a hosting provider.
 
-The proposal combines standard file delivery and authorization with a small
-browser handoff. An application can use the same flow with several CDEs once
-it has a connection and permission for each. Each tool still needs to
-understand the file types it handles.
+The proposal combines standard file delivery and authorization with a browser
+handoff. A **handoff** tells an app which published file version to open and
+whether the user chose **Open with…** or **Edit with…**. The app uses a
+configured **connection** to the registry and its sign-in service. It can use
+the same flow with several CDEs when it has a connection and permission for
+each. Each app needs to understand the files it handles.
 
 ## Who does what
 
@@ -27,64 +29,76 @@ flowchart LR
 
 | Component | Responsibility |
 | --- | --- |
-| CDE | Organizes project files and versions, checks what the user can read, and offers compatible apps. |
+| CDE | Organizes project files and versions and offers compatible apps for the selected version. |
 | Registry | Stores manifests, blobs, and tags. Enforces repository access on every request. |
 | Authorization service | Authenticates people and issues scoped tokens according to the owner's policy. |
 | Application | Interprets the file, performs the work, and publishes the result to the user's chosen destination. |
 
-A file version is represented by an OCI manifest pointing to content-addressed
-blobs. A tag gives a version a name people can browse. A manifest digest
-identifies the exact version even if someone moves a tag. OCI carries the
-package. A domain standard such as IFC supplies the meaning of its contents.
+A **file version** is the OCI package described by a manifest and its files.
+The **version name**, called a tag in the registry API, is what people browse
+and choose. The manifest **digest** identifies the exact version even if a
+tag moves. A **folder** corresponds to an OCI repository, the address and
+access boundary for a collection of versions. An **artifact type** tells an
+app how to interpret a package. For example, an artifact type can tell the
+app to expect a single model in IFC format.
 
 ## Open with and publish
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant CDE
+    participant CDE as Source CDE
+    participant Source as Source registry
     participant App
     participant Auth as Authorization service
-    participant Registry as OCI registry
+    participant Destination as Destination registry
     User->>CDE: Select a version and choose Open with
-    CDE->>Registry: Read manifest and resolve its digest
+    CDE->>Source: Read the selected manifest and resolve its digest
     CDE->>App: Open the launch URL with an oci-handoff/1 fragment
     App->>Auth: Sign in and request scoped registry access
     Auth-->>App: Issue a token for the allowed repository actions
-    App->>Registry: Pull the manifest by digest and fetch its file
+    App->>Source: Pull the manifest by digest and fetch its file
     User->>App: Choose a destination and publish a new version
-    App->>Registry: Upload missing blobs and PUT a manifest under a new tag
-    Registry-->>App: Confirm publication and return the manifest digest
-    User->>CDE: Browse the published version
+    App->>Destination: Upload missing blobs and publish the manifest
+    Destination-->>App: Confirm publication and return the manifest digest
 ```
 
-The app authorizes a different destination independently. The registry
-checks pull and push separately. If it denies an operation, the app stops
-that operation and tells the user which access they need. A successful
-manifest PUT completes publication. The CDE can discover the version through
-its regular listing.
+The **source** is the registry, repository, and digest of the selected
+version. The **destination** is the registry and repository the user chooses
+for publication. It can be the source repository, another repository, or a
+registry operated by another organization. The app obtains permission for
+the destination and the registry checks read and publish access separately.
+The published version appears in the CDE that lists the destination folder.
 
 ## What implementations agree on
 
-**Packaging and transfer.** Use an OCI image manifest with a top-level
-`artifactType` identifying the package format. Document what each type
-contains so different tools can implement it. For a single-file package,
-put the file in one layer with its own media type and use the OCI empty
-config. Apps download the manifest and layer by digest and check the bytes
-against those digests. Use the registry's OCI APIs directly for transfers.
+### Package format
+
+Use an OCI image manifest with a top-level `artifactType` identifying the
+package format. Document the files, formats, and relationships each type
+expects so different apps can interpret it. For a single-file package, put
+the file in one layer with its own media type and use the OCI empty config.
+Apps download the manifest and file blobs by digest and verify the received
+bytes against the manifest digest and the blob descriptors. Live queries and
+approved changes to a source system use the APIs supported by that system.
 [OCI Image manifest](https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md)
 · [OCI Distribution](https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md)
 
-**App registration.** The CDE needs the app's display name, launch URL,
-and supported `artifactType` values with a `view` or `edit` intent for
-each. For example, a tool can edit one type of model and view two types of
-report. The CDE compares each declaration to the manifest's exact
-`artifactType` and offers the matching actions. Each identity provider
-registers the app's exact OAuth callback URLs. CDEs can choose how to
-collect and store registrations.
+### App registration
 
-**Handoff.** Append `#handoff=<encoded>` to the registered launch URL. The
-value is unpadded base64url of the UTF-8 `oci-handoff/1` JSON message below.
+The CDE registers the app's display name, launch URL, and supported
+`artifactType` values with a `view` or `edit` intent for each. For example, an
+app can edit one type of model and view two types of report. The CDE compares
+the registration to the manifest's exact `artifactType` and offers the
+matching actions. The app's OAuth client registration specifies the exact
+callback URLs. CDEs can choose how to collect and store app registrations.
+
+### Browser handoff
+
+Append `#handoff=<encoded>` to the registered launch URL. The value is
+unpadded base64url of the UTF-8 `oci-handoff/1` JSON message below. Pin the
+source to the digest resolved for the selected version so a tag change
+between app selection and launch leaves the input stable.
 
 ```json
 {
@@ -98,22 +112,31 @@ value is unpadded base64url of the UTF-8 `oci-handoff/1` JSON message below.
 }
 ```
 
-The fragment carries a locator and a UI hint without credentials. An
-optional `destination` can suggest a registry and repository. The app
-checks the registry against a configured connection, clears the fragment
-after parsing, and requests its own access. The CDE's repository token
-stays with the CDE.
+The registry value is an origin without a trailing slash. The repository is
+the OCI repository name. This protocol version uses a `sha256:` manifest
+digest. `view` and `edit` describe the user's requested action. The registry
+determines which operations their token permits. An optional `destination`
+can suggest an object with `registry` and `repository`. The app checks it
+against a configured connection and asks the user before publishing there.
 
-**Authentication and authorization.** A browser app configures the issuer
-and public client ID for each connection, uses OpenID Connect discovery and
-OAuth Authorization Code with PKCE S256, and verifies the issuer on
-return. It requests access for the registry resource. The registry or its
-trusted gateway validates the token's signature, issuer, audience, and
-expiry before repository permissions are enforced. Native clients can
-follow the registry's Distribution Bearer challenge. Repository scope can
-grant pull, push, or both. The handoff digest selects content, while the
-grant applies at repository scope. Browser connections also need the
-app's exact origin allowed at the token endpoint and registry.
+The app treats the fragment as untrusted input. It validates the protocol,
+source, and intent against a configured connection before making requests,
+then clears the fragment. The CDE keeps its own credentials. The app obtains
+access independently.
+
+### Access and publication
+
+A browser app configures the issuer, public client ID, and callback for
+each connection. It uses OpenID Connect discovery and OAuth Authorization
+Code with PKCE S256, binds the handoff to OAuth `state`, and verifies the
+issuer and state on return. It requests access for the registry origin as
+the OAuth resource. Repository scopes grant `pull`, `push`, or both. The
+digest selects content, and the grant applies at repository scope. The
+registry or its trusted gateway validates the token's signature, issuer,
+audience, and expiry before enforcing repository permissions. Native
+clients can follow the registry's Distribution Bearer challenge. Browser
+connections need the app's origin allowed at the token endpoint and registry,
+including access to upload headers such as `Location`.
 [OpenID Connect discovery](https://openid.net/specs/openid-connect-discovery-1_0.html)
 · [RFC 7636](https://www.rfc-editor.org/rfc/rfc7636.html)
 · [RFC 9207](https://www.rfc-editor.org/rfc/rfc9207.html)
@@ -121,9 +144,18 @@ app's exact origin allowed at the token endpoint and registry.
 · [OAuth security BCP](https://www.rfc-editor.org/rfc/rfc9700.html)
 · [Distribution token authentication](https://distribution.github.io/distribution/spec/auth/token/)
 
-To check interoperability, open a version from one CDE with an independent
-app and publish a revision to a second CDE. Verify that the second CDE
-shows the new digest and that publication requires write access there.
+For a new version, upload missing blobs and put the output manifest under
+a new tag. A successful manifest PUT completes publication. Use the output
+digest to identify the exact version. For a report about an input version,
+record the source registry, repository, and digest in the report's package.
+When the input is available in the destination repository, an OCI `subject`
+can also make the relationship discoverable through the Referrers API.
+
+Keep credentials scoped to their registry. When the app writes to another
+registry, it authorizes that connection separately. If access is denied,
+tell the user which permission is needed. If a publication request times
+out, check the destination tag and digest before retrying. A registry with
+immutable version names needs to enforce that policy at the destination.
 
 ## The Subsoil example
 
@@ -131,9 +163,13 @@ Subsoil is the CDE, Zot is the registry, and Keycloak issues tokens.
 Envoy validates those tokens at the public registry address. The demo
 provisions a private repository per verified account, binds registered apps
 to that workspace, and accepts browser apps on `http://localhost:5173`.
-Other CDEs can choose their own project structure, access policy, and
-registration interface. The shared boundary is the OCI package and
-transfer, the agreed authorization flow, and the proposed handoff.
+Start by [connecting an app](DEVELOPMENT.md) and publishing a new version in
+that workspace. To check a connection to another registry, open a version
+from one CDE and publish to a second CDE. Verify that the second CDE shows
+the new digest and that publishing requires write access there.
 
-[Try the starter editor](DEVELOPMENT.md) to see a version opened and
-published by an independent client.
+An organization can also [run Subsoil locally](../README.md#try-it) or use
+its own OCI registry, identity provider, and repository policy. Configure
+the app with the registry origin, issuer, registered client and callback,
+and the repository it can access. The same handoff identifies the source
+version regardless of which organization operates the store.
