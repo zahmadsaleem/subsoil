@@ -1,0 +1,174 @@
+---
+- name: Deploy Subsoil on a prepared VPS
+  hosts: all
+  become: false
+  gather_facts: false
+  vars:
+    subsoil_repository: https://github.com/zahmadsaleem/subsoil.git
+    subsoil_revision: main
+    subsoil_checkout: "{{ ansible_facts.user_dir }}/subsoil"
+    subsoil_compose:
+      - docker
+      - compose
+      - --env-file
+      - build/hosted/compose.env
+      - -f
+      - compose.hosted.yaml
+
+  tasks:
+    - name: Find the operator and their home directory
+      ansible.builtin.setup:
+        gather_subset: ['!all', '!min', user]
+
+    - name: Require the three public hostnames
+      ansible.builtin.assert:
+        that:
+          - subsoil_files_host | default('') | length > 0
+          - subsoil_registry_host | default('') | length > 0
+          - subsoil_auth_host | default('') | length > 0
+        fail_msg: Set subsoil_files_host, subsoil_registry_host, and subsoil_auth_host.
+
+    - name: Require a non-root deployment operator
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.user_uid != 0
+          - subsoil_checkout.startswith('/')
+        fail_msg: Connect as the deployment operator and use an absolute checkout path.
+
+    - name: Check whether this checkout already has hosted credentials
+      ansible.builtin.stat:
+        path: "{{ subsoil_checkout }}/build/hosted/compose.env"
+      register: subsoil_hosted_env
+
+    - name: Refuse to generate new credentials for an existing hosted project
+      when: not subsoil_hosted_env.stat.exists
+      block:
+        - name: Check for existing hosted volumes
+          ansible.builtin.command:
+            argv: [docker, volume, ls, --quiet, --filter, label=com.docker.compose.project=subsoil-hosted]
+          become: true
+          check_mode: false
+          changed_when: false
+          register: subsoil_existing_volumes
+
+        - name: Require the existing configuration with its volumes
+          ansible.builtin.assert:
+            that: subsoil_existing_volumes.stdout_lines | length == 0
+            fail_msg: Hosted volumes already exist. Use the matching checkout and credentials or reset the previous deployment deliberately.
+
+    - name: Check out Subsoil
+      ansible.builtin.git:
+        repo: "{{ subsoil_repository }}"
+        dest: "{{ subsoil_checkout }}"
+        version: "{{ subsoil_revision }}"
+      register: subsoil_source
+
+    - name: Generate the hosted configuration and credentials on first run
+      ansible.builtin.command:
+        argv:
+          - python3
+          - deploy/configure.py
+          - --files-host
+          - "{{ subsoil_files_host }}"
+          - --registry-host
+          - "{{ subsoil_registry_host }}"
+          - --auth-host
+          - "{{ subsoil_auth_host }}"
+        chdir: "{{ subsoil_checkout }}"
+        creates: build/hosted/compose.env
+
+    - name: Match the requested hostnames to the existing deployment
+      ansible.builtin.command:
+        argv:
+          - grep
+          - -Fxq
+          - "{{ item.key }}={{ item.value | lower }}"
+          - build/hosted/compose.env
+        chdir: "{{ subsoil_checkout }}"
+      loop:
+        - key: FILES_HOST
+          value: "{{ subsoil_files_host }}"
+        - key: REGISTRY_HOST
+          value: "{{ subsoil_registry_host }}"
+        - key: AUTH_HOST
+          value: "{{ subsoil_auth_host }}"
+      register: hostname_check
+      changed_when: false
+      failed_when: false
+
+    - name: Require an explicit migration when hostnames change
+      ansible.builtin.assert:
+        that: hostname_check.results | map(attribute='rc') | reject('equalto', 0) | list | length == 0
+        fail_msg: Requested hostnames differ from build/hosted/compose.env. Preserve the existing credentials and migrate the endpoint configuration before retrying.
+
+    - name: Deploy the images for the checked-out commit
+      become: true
+      environment:
+        SUBSOIL_IMAGE_TAG: "{{ subsoil_source.after }}"
+      block:
+        - name: Validate the hosted Compose configuration
+          become: false
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['config', '--quiet'] }}"
+            chdir: "{{ subsoil_checkout }}"
+          changed_when: false
+
+        - name: Pull the hosted Compose images
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['pull', '--policy', 'always'] }}"
+            chdir: "{{ subsoil_checkout }}"
+
+        - name: Start the hosted Compose stack
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['up', '--no-build', '--pull', 'never', '-d'] }}"
+            chdir: "{{ subsoil_checkout }}"
+
+        - name: Find the sample seed container
+          ansible.builtin.command:
+            argv: "{{ subsoil_compose + ['ps', '--all', '--quiet', 'seed'] }}"
+            chdir: "{{ subsoil_checkout }}"
+          register: subsoil_seed
+          changed_when: false
+          failed_when: subsoil_seed.rc != 0 or subsoil_seed.stdout_lines | length != 1
+
+        - name: Wait for the sample version to be seeded
+          ansible.builtin.command:
+            argv: ["docker", "wait", "{{ subsoil_seed.stdout | trim }}"]
+          register: subsoil_seed_exit
+          changed_when: false
+          failed_when: subsoil_seed_exit.rc != 0 or subsoil_seed_exit.stdout | trim != '0'
+          timeout: 180
+
+    - name: Verify the public endpoints over HTTPS
+      ansible.builtin.uri:
+        url: "{{ item.url }}"
+        headers: "{{ item.headers | default({}) }}"
+        status_code: "{{ item.status }}"
+        follow_redirects: none
+        timeout: 5
+      delegate_to: localhost
+      become: false
+      loop:
+        - url: "https://{{ subsoil_files_host }}/readyz"
+          status: 200
+        - url: "https://{{ subsoil_auth_host }}/realms/subsoil/.well-known/openid-configuration"
+          status: 200
+        - url: "https://{{ subsoil_auth_host }}/.well-known/oauth-authorization-server/realms/subsoil"
+          status: 200
+          headers:
+            Origin: http://localhost:5173
+        - url: "https://{{ subsoil_registry_host }}/v2/"
+          status: 401
+      loop_control:
+        label: "{{ item.url }}"
+      register: subsoil_ready
+      until:
+        - subsoil_ready.status == item.status
+        - item.headers is not defined or (subsoil_ready.access_control_allow_origin | default('')) == item.headers.Origin
+      retries: 24
+      delay: 5
+      tags: public_check
+
+    - name: Show the Files URL and the remote credentials path
+      ansible.builtin.debug:
+        msg: "Open https://{{ subsoil_files_host }}/explore. The generated passwords are on the VPS at {{ subsoil_checkout }}/build/hosted/accounts.txt."

@@ -1,0 +1,17 @@
+{$FILES_HOST} {
+	reverse_proxy subsoil:5000
+}
+
+{$REGISTRY_HOST} {
+	reverse_proxy registry:8080
+}
+
+{$AUTH_HOST} {
+	@demoRealm path /realms/subsoil /realms/subsoil/* /.well-known/oauth-authorization-server/realms/subsoil /resources/*
+	handle @demoRealm {
+		reverse_proxy keycloak:8080
+	}
+	handle {
+		respond 404
+	}
+}

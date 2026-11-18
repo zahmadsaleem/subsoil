@@ -1,0 +1,12 @@
+{
+  "registry": "http://localhost:5001",
+  "registry_upstream": "http://registry:8080",
+  "authorization_server": "http://localhost:8080/realms/subsoil",
+  "client_id": "subsoil-browser",
+  "scopes": [
+    "registry:catalog:read",
+    "repository:project/model:pull",
+    "repository:reviews/model:pull"
+  ],
+  "applications": []
+}

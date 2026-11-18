@@ -1,0 +1,12 @@
+*
+!demo/
+!demo/keycloak/
+!demo/keycloak/pom.xml
+!demo/keycloak/src/
+!demo/keycloak/src/**
+!demo/keycloak/theme/
+!demo/keycloak/theme/**
+!assets/
+!assets/brand/
+!assets/brand/subsoil-logo.svg
+!assets/brand/subsoil-symbol.svg
