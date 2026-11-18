@@ -17,13 +17,13 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
 
-/** Demo adapter: OAuth scopes intersect realm roles, encoded as Distribution access claims. */
+/** Converts allowed OAuth scopes into Distribution access claims. */
 public final class RegistryTokenMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper {
     public static final String ID = "subsoil-demo-registry-token";
     @Override public String getId() { return ID; }
     @Override public String getDisplayType() { return "OCI registry repository permissions"; }
     @Override public String getDisplayCategory() { return "Token mapper"; }
-    @Override public String getHelpText() { return "Grants only requested repository actions backed by identically named realm roles."; }
+    @Override public String getHelpText() { return "Grants requested repository actions scoped to the workspace owner or realm roles."; }
     @Override public int getPriority() { return 50; }
     @Override public List<ProviderConfigProperty> getConfigProperties() { return List.of(); }
     @Override public AccessToken transformAccessToken(AccessToken token, ProtocolMapperModel mapping, KeycloakSession session, UserSessionModel user, ClientSessionContext client) {
@@ -54,16 +54,20 @@ public final class RegistryTokenMapper extends AbstractOIDCProtocolMapper implem
                 }
                 continue;
             }
-            if (scope.startsWith("repository:") && !workspaceBinding.isEmpty()) continue;
             if (scope.equals("registry:catalog:read")) { catalogRequested = true; continue; }
             if (!scope.startsWith("repository:")) { if (!scope.isBlank()) granted.add(scope); continue; }
             String[] parts = scope.split(":", -1);
             if (parts.length != 3 || !parts[1].matches("[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)*")) continue;
+            if (!workspaceBinding.isEmpty() && !parts[1].equals(workspaceBinding)) continue;
             Set<String> actions = repositories.computeIfAbsent(parts[1], k -> new LinkedHashSet<>());
             for (String action : parts[2].split(",")) {
                 if (!action.equals("pull") && !action.equals("push")) continue;
-                RoleModel role = session.getContext().getRealm().getRole("repository:" + parts[1] + ":" + action);
-                if (role != null && user.getUser().hasRole(role)) actions.add(action);
+                if (!workspaceBinding.isEmpty()) {
+                    actions.add(action);
+                } else {
+                    RoleModel role = session.getContext().getRealm().getRole("repository:" + parts[1] + ":" + action);
+                    if (role != null && user.getUser().hasRole(role)) actions.add(action);
+                }
             }
         }
         List<Map<String, Object>> access = new ArrayList<>();

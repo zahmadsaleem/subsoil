@@ -17,8 +17,6 @@ import (
 
 const workspaceAppLimit = 8
 
-var errAppExists = errors.New("app already registered")
-
 type capability struct {
 	ArtifactType string   `json:"artifact_type"`
 	Intents      []string `json:"intents"`
@@ -101,7 +99,7 @@ func (i *identity) workspaceApps(ctx context.Context, owner, admin string) ([]ke
 	prefix := "subsoil-ws-" + owner + "-"
 	query := url.Values{"clientId": {prefix}, "search": {"true"}, "max": {"100"}}
 	var apps []keycloakApp
-	if err := i.clients(ctx, admin, http.MethodGet, "?"+query.Encode(), nil, &apps); err != nil {
+	if err := i.adminRequest(ctx, admin, http.MethodGet, "/clients?"+query.Encode(), nil, &apps); err != nil {
 		return nil, err
 	}
 	return slices.DeleteFunc(apps, func(app keycloakApp) bool {
@@ -159,7 +157,7 @@ func (s *service) registeredApps(w http.ResponseWriter, r *http.Request) {
 			if entry.ClientID != r.PathValue("app") {
 				continue
 			}
-			if err := s.identity.clients(r.Context(), admin, http.MethodDelete, "/"+url.PathEscape(entry.ID), nil, nil); err != nil {
+			if err := s.identity.adminRequest(r.Context(), admin, http.MethodDelete, "/clients/"+url.PathEscape(entry.ID), nil, nil); err != nil {
 				s.workspaceError(w, err)
 				return
 			}
@@ -186,6 +184,30 @@ func (s *service) copyableApp(owner string, entry keycloakApp) (registeredApp, b
 	}
 	return registeredApp{registration, entry.ClientID, entry.ClientID, s.config.AuthorizationServer,
 		s.config.Registry, workspaceRepository(owner)}, true
+}
+
+func (i *identity) appScopes(ctx context.Context, admin, repository string) ([]string, error) {
+	scopes := []string{"workspace:read", "workspace:write"}
+	for _, grant := range []struct{ action, label string }{
+		{"pull", "Read files in your demo workspace"},
+		{"push", "Publish versions in your demo workspace"},
+	} {
+		// The workspace owner determines the scope name, never the app submission.
+		name := "repository:" + repository + ":" + grant.action
+		err := i.adminRequest(ctx, admin, http.MethodPost, "/client-scopes", map[string]any{
+			"name": name, "protocol": "openid-connect",
+			"attributes": map[string]string{
+				"include.in.token.scope":    "true",
+				"display.on.consent.screen": "true",
+				"consent.screen.text":       grant.label,
+			},
+		}, nil)
+		if err != nil && !errors.Is(err, errIdentityConflict) {
+			return nil, err
+		}
+		scopes = append(scopes, name)
+	}
+	return scopes, nil
 }
 
 func (s *service) createWorkspaceApp(w http.ResponseWriter, r *http.Request, owner string, registration appRegistration) {
@@ -219,21 +241,27 @@ func (s *service) createWorkspaceApp(w http.ResponseWriter, r *http.Request, own
 		writeJSON(w, http.StatusBadRequest, badRequest("Shorten the app registration details"))
 		return
 	}
+	repository := workspaceRepository(owner)
+	scopes, err := i.appScopes(r.Context(), admin, repository)
+	if err != nil {
+		s.workspaceError(w, err)
+		return
+	}
 	app := keycloakApp{ClientID: clientID, Enabled: true, Attributes: map[string]string{
 		"subsoil.workspace": owner, "subsoil.app": string(metadata),
 		"pkce.code.challenge.method": "S256",
 	}}
-	err = i.clients(r.Context(), admin, http.MethodPost, "", map[string]any{
+	err = i.adminRequest(r.Context(), admin, http.MethodPost, "/clients", map[string]any{
 		"clientId": app.ClientID, "name": registration.Name, "protocol": "openid-connect",
 		"enabled": true, "publicClient": true, "standardFlowEnabled": true, "consentRequired": true,
 		"directAccessGrantsEnabled": false, "implicitFlowEnabled": false, "serviceAccountsEnabled": false,
 		"fullScopeAllowed": false, "redirectUris": registration.RedirectURIs, "webOrigins": []string{developerOrigin},
-		"defaultClientScopes": []string{}, "optionalClientScopes": []string{"workspace:read", "workspace:write"},
+		"defaultClientScopes": []string{}, "optionalClientScopes": scopes,
 		"attributes": app.Attributes,
 		"protocolMappers": []map[string]any{
 			{
 				"name": "Registry repository permissions", "protocol": "openid-connect", "protocolMapper": "subsoil-demo-registry-token",
-				"config": map[string]string{"registry": i.registry, "service": "zot", "workspaceRepository": workspaceRepository(owner)},
+				"config": map[string]string{"registry": i.registry, "service": "zot", "workspaceRepository": repository},
 			},
 			{
 				"name": "Account subject", "protocol": "openid-connect", "protocolMapper": "oidc-sub-mapper",
@@ -241,7 +269,7 @@ func (s *service) createWorkspaceApp(w http.ResponseWriter, r *http.Request, own
 			},
 		},
 	}, nil)
-	if errors.Is(err, errAppExists) {
+	if errors.Is(err, errIdentityConflict) {
 		writeJSON(w, http.StatusConflict, badRequest("An app with this name is already registered"))
 		return
 	}

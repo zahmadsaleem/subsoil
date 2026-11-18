@@ -29,7 +29,8 @@
       <ul id="registered-apps"></ul>
       <form id="register-app">
         <label>App name <input name="app_name" required maxlength="80" placeholder="Project editor"></label>
-        <label>Callback URL <input name="callback_url" type="url" required value="http://localhost:5173/"></label>
+        <label>Callback URLs <textarea name="callback_urls" rows="2" required aria-describedby="callback-help">http://localhost:5173/</textarea></label>
+        <small id="callback-help">Enter one exact URL per line.</small>
         <label>Open with address <input name="launch_url" type="url" value="http://localhost:5173/"></label>
         <label>Artifact types to view <input name="view_types" value="application/vnd.subsoil.demo.notes.v1, application/vnd.subsoil.demo.checklist.v1+json, application/vnd.subsoil.demo.review.v1+json"></label>
         <label>Artifact types to edit <input name="edit_types" value="application/vnd.subsoil.demo.notes.v1, application/vnd.subsoil.demo.checklist.v1+json"></label>

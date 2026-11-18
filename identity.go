@@ -20,6 +20,7 @@ const developerOrigin = "http://localhost:5173"
 
 var workspaceID = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 var noWorkspace = errors.New("no verified workspace")
+var errIdentityConflict = errors.New("identity record already exists")
 
 type identity struct {
 	ClientID     string `json:"client_id"`
@@ -69,7 +70,7 @@ func (i *identity) send(req *http.Request, result any) error {
 	}
 	defer response.Body.Close()
 	if response.StatusCode == http.StatusConflict {
-		return errAppExists
+		return errIdentityConflict
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
 		return fmt.Errorf("identity service returned %d", response.StatusCode)
@@ -113,7 +114,7 @@ func (i *identity) adminToken(ctx context.Context) (string, error) {
 	return result.AccessToken, nil
 }
 
-func (i *identity) clients(ctx context.Context, token, method, suffix string, body, result any) error {
+func (i *identity) adminRequest(ctx context.Context, token, method, path string, body, result any) error {
 	var reader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -122,7 +123,7 @@ func (i *identity) clients(ctx context.Context, token, method, suffix string, bo
 		}
 		reader = bytes.NewReader(data)
 	}
-	req, err := http.NewRequestWithContext(ctx, method, i.admin+"/clients"+suffix, reader)
+	req, err := http.NewRequestWithContext(ctx, method, i.admin+path, reader)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { randomUUID } = require('node:crypto');
+const { createHash, randomBytes, randomUUID } = require('node:crypto');
 const { chromium } = require('playwright');
 
 const files = 'http://localhost:5080';
@@ -128,6 +128,40 @@ async function open(app, workspace, type) {
   return page;
 }
 
+async function authorize(account, app, callback, scope, expectedStatus = 200) {
+  const page = await account.context.newPage();
+  try {
+    const returned = page.waitForRequest(request => request.isNavigationRequest() && request.url().startsWith(callback + '?'));
+    returned.catch(() => {});
+    const verifier = randomBytes(32).toString('base64url');
+    const state = randomUUID();
+    const request = new URLSearchParams({
+      client_id: app.client_id, redirect_uri: callback, scope, state,
+      response_type: 'code', code_challenge_method: 'S256',
+      code_challenge: createHash('sha256').update(verifier).digest('base64url'),
+      resource: registry,
+    });
+    await page.goto(issuer + '/protocol/openid-connect/auth?' + request);
+    const accept = page.locator('#kc-oauth #kc-login');
+    if (await accept.isVisible()) await accept.click();
+    const reply = new URL((await returned).url()).searchParams;
+    assert.equal(reply.get('error'), null, reply.get('error_description') || 'authorization succeeded');
+    assert.equal(reply.get('state'), state);
+    assert.equal(reply.get('iss'), issuer);
+    assert(reply.get('code'), 'authorization code returned to the exact callback');
+    const token = await fetch(issuer + '/protocol/openid-connect/token', {
+      method: 'POST', body: new URLSearchParams({
+        grant_type: 'authorization_code', client_id: app.client_id, redirect_uri: callback,
+        code: reply.get('code'), code_verifier: verifier, resource: registry,
+      }),
+    });
+    assert.equal(token.status, expectedStatus, 'workspace app code exchange');
+    return token.json();
+  } finally {
+    await page.close();
+  }
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -143,6 +177,8 @@ async function main() {
     await alice.page.getByText('Workspace apps', { exact: true }).click();
     const registration = alice.page.locator('#register-app');
     await registration.getByLabel('App name').fill('Text editor');
+    const publishCallback = editor + 'index.html';
+    await registration.getByLabel('Callback URLs').fill(editor + '\n' + publishCallback);
     await registration.getByLabel('Artifact types to view').fill(notes + ', ' + review);
     await registration.getByLabel('Artifact types to edit').fill(notes);
     const registered = alice.page.waitForResponse(reply =>
@@ -151,7 +187,10 @@ async function main() {
     const registeredReply = await registered;
     assert.equal(registeredReply.status(), 201, await registeredReply.text());
     const app = await registeredReply.json();
+    assert.deepEqual(app.redirect_uris, [editor, publishCallback]);
     await alice.page.getByText('App registered.', { exact: false }).waitFor();
+    const copyable = JSON.parse(await alice.page.locator('#app-config-json').textContent());
+    assert.deepEqual(copyable.redirect_uris, app.redirect_uris);
     const viewer = await register(alice, 'Preview', editor + 'index.html', [{ artifact_type: notes, intents: ['view'] }]);
     const query = tag => '/handoff/applications?' + new URLSearchParams({ repository: alice.repository, reference: tag });
     const matched = await (await http(files, query('notes-v1'), alice.token)).json();
@@ -187,6 +226,22 @@ async function main() {
     const aliceBase = '/v2/' + alice.repository;
     const bobBase = '/v2/' + bob.repository;
     const denied = [401, 403, 404];
+    const repositoryScope = 'repository:' + alice.repository;
+    const read = await authorize(alice, app, publishCallback, repositoryScope + ':pull');
+    assert.equal(read.scope, repositoryScope + ':pull');
+    assert.equal((await http(registry, aliceBase + '/manifests/notes-v1', read.access_token)).status, 200);
+    assert(denied.includes((await http(registry, aliceBase + '/blobs/uploads/', read.access_token, 'POST')).status));
+    const write = await authorize(alice, app, publishCallback, repositoryScope + ':pull ' + repositoryScope + ':push');
+    const scopes = write.scope.split(/\s+/);
+    assert(scopes.every(scope => scope.startsWith(repositoryScope + ':')));
+    assert.deepEqual(scopes.flatMap(scope => scope.slice(repositoryScope.length + 1).split(',')).sort(), ['pull', 'push']);
+    const ownManifest = await (await http(registry, aliceBase + '/manifests/notes-v2', write.access_token)).text();
+    const manifestHeaders = { 'Content-Type': 'application/vnd.oci.image.manifest.v1+json' };
+    assert.equal((await http(registry, aliceBase + '/manifests/repository-scope', write.access_token, 'PUT', ownManifest, manifestHeaders)).status, 201);
+    assert(denied.includes((await http(registry, bobBase + '/manifests/notes-v1', write.access_token)).status));
+    assert(denied.includes((await http(registry, bobBase + '/manifests/foreign', write.access_token, 'PUT', ownManifest, manifestHeaders)).status));
+    const wrongUser = await authorize(bob, app, publishCallback, repositoryScope + ':pull', 400);
+    assert.equal(wrongUser.error, 'invalid_grant');
     assert(denied.includes((await http(registry, aliceBase + '/tags/list', bob.token)).status));
     assert(denied.includes((await http(registry, aliceBase + '/manifests/notes-v1', bob.token)).status));
     assert(denied.includes((await http(registry, aliceBase + '/blobs/uploads/', bob.token, 'POST')).status));

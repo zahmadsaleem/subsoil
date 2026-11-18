@@ -34,7 +34,7 @@ window.SubsoilWorkspace = (() => {
     const showConfig = app => {
       const config = {
         issuer: app.issuer, registry: app.registry, repository: app.repository,
-        client_id: app.client_id, redirect_uri: app.redirect_uris[0], handles: app.handles
+        client_id: app.client_id, redirect_uri: app.redirect_uris[0], redirect_uris: app.redirect_uris, handles: app.handles
       };
       const json = JSON.stringify(config, null, 2);
       element('app-config-json').textContent = json;
@@ -83,7 +83,7 @@ window.SubsoilWorkspace = (() => {
           }
         }
         const app = await call('POST', endpoint, {
-          name: fields.get('app_name'), redirect_uris: [fields.get('callback_url')],
+          name: fields.get('app_name'), redirect_uris: fields.get('callback_urls').split(/\r?\n/).map(url => url.trim()).filter(Boolean),
           launch_url: fields.get('launch_url'),
           handles: [...handles].map(([artifact_type, intents]) => ({ artifact_type, intents: [...intents] }))
         });
