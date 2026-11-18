@@ -32,7 +32,8 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 #artifact { padding: 24px; }
 .toolbar { padding: 18px 20px; border-bottom: 1px solid #e5e9e0; }
 #search-form { display: flex; gap: 8px; flex: 1; max-width: 460px; }
-input { width: 100%; min-width: 0; font-size: 12px; }
+input, #register-app textarea { width: 100%; min-width: 0; font-size: 12px; }
+#register-app textarea { display: block; font: inherit; }
 .sort-note { font-size: 11px; white-space: nowrap; }
 .repository-list { list-style: none; padding: 0; margin: 0; }
 .repository-list li + li { border-top: 1px solid #edf0e8; }

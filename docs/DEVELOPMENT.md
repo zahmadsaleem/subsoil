@@ -22,7 +22,7 @@ python3 -m http.server 5173 --bind 127.0.0.1 --directory examples/editor
 
 ## Connect your own app
 
-Register the exact callback URLs under `http://localhost:5173`. An app
+Register the exact callback URLs under `http://localhost:5173`, one per line. An app
 with a launch URL appears under **Open with…** when it handles the selected
 manifest's `artifactType` and requested action. These declarations let an
 app edit notes and view reviews.
@@ -36,10 +36,12 @@ app edit notes and view reviews.
 }
 ```
 
-Use the issuer, registry origin, and public client ID from **App
-configuration**. Request `openid workspace:read` to open files and add
-`workspace:write` to publish. Set OAuth's `resource` to the registry origin.
-Keycloak grants repository access for the registered workspace.
+Use the issuer, registry origin, public client ID, and repository from **App
+configuration**. Request `repository:<repository>:pull` to open files and
+add `repository:<repository>:push` to publish. Send each action as a separate
+OAuth scope and set `resource` to the registry origin. The starter editor
+uses the equivalent `openid workspace:read` and `workspace:write` scopes.
+Keycloak grants access only to the registered workspace.
 
 ## Prompt for a coding agent
 
