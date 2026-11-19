@@ -65,20 +65,22 @@ and understand the decisions the team made at the time.
 
 ## A shared way to publish a version
 
-For a version to travel between tools, those tools need a common way to
-handle what was published. The Open Container Initiative (OCI) defines how
-to package files and how to publish and retrieve an exact version.
+A design reviewer needs the model version issued for review. A contractor’s
+buyer needs a table of quantities and a link to the model version it came
+from. A facilities team investigating an overheating room might need raw
+sensor readings and a record of where and when they were taken. In each case,
+the team can publish the files or data with the details the next person needs,
+so a compatible tool can retrieve them together.
+
+A work package for a ceiling layout could contain the model, an exported
+PDF, and a note asking the contractor to check where the ducts cross the
+beams. If the layout changes next week, the team can still go back to the
+exact set of files that was issued for that review.
+
+The Open Container Initiative (OCI) defines how to publish that bundle of
+files as an **artifact** and how compatible tools can retrieve an exact
+published version.
 [OCI packaging specification](https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md) · [OCI distribution specification](https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md)
-
-Helm, a software package manager, already uses OCI to distribute versioned
-packages. [Helm documentation](https://docs.helm.sh/docs/v3/topics/registries/)
-
-A design reviewer needs the model version issued for review. Someone
-ordering materials needs a table of quantities and a link to the model
-version it came from. A facilities team investigating an overheating room
-might need raw sensor readings and a record of where and when they were
-taken. In each case, the team can publish the files or data with the details
-the next person needs, so a compatible tool can retrieve them together.
 
 ## Use this tool on this version
 
