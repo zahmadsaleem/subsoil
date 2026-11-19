@@ -1,0 +1,259 @@
+#!/usr/bin/env python3
+"""Assemble and verify the static Subsoil website for GitHub Pages."""
+
+import argparse
+from collections import defaultdict
+from html import escape
+from html.parser import HTMLParser
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+from urllib.parse import unquote, urlsplit
+
+SITE = Path(__file__).resolve().parent
+ROOT = SITE.parent
+GITHUB_DOCS = "https://github.com/zahmadsaleem/subsoil/blob/main/docs/"
+GOVERNANCE_FILES = (
+    "index.html", "deck.css", "deck.js", "speaker-notes.html", "previews/overview.png",
+    "assets/project-record.png", "assets/handoff.png", "assets/own-records.png",
+    "assets/release-in-hand.png",
+)
+PUBLISHED_PITCH_RESOURCES = (
+    "assets/centralized-exchange.png", "assets/distributed-collaboration.png",
+    "oci-subsoil-manifest.example.json", "subsoil-profile-config.example.json",
+)
+INLINE = re.compile(r"\[([^\]\n]+)\]\(([^)\n]+)\)|\[(\d+)\]|\*([^*\n]+)\*")
+BARRIERS = (
+    ("Skills shortages", 46),
+    ("Integration with existing systems", 37),
+    ("Data quality and availability", 30),
+    ("Implementation cost", 29),
+    ("Unclear return on investment", 28),
+    ("Lack of standards and guidance", 25),
+)
+
+
+class Research:
+    def __init__(self, markdown):
+        body, references = markdown.strip().split("\n## References\n", 1)
+        lead, *sections = re.split(r"\n(?=## )", body)
+        _, self.intro = lead.split("\n", 1)
+        self.sections = []
+        for section in sections:
+            title, text = section.removeprefix("## ").split("\n", 1)
+            anchor = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+            self.sections.append((anchor, title, text))
+        self.references = {}
+        for line in references.strip().splitlines():
+            number, entry = line.split(". ", 1)
+            self.references[int(number)] = entry
+        self.citations = defaultdict(list)
+
+    def cite(self, number):
+        if number not in self.references:
+            raise ValueError(f"Research citation {number} has no reference.")
+        uses = self.citations[number]
+        anchor = f"cite-{number}-{len(uses) + 1}"
+        uses.append(anchor)
+        return (
+            f'<sup class="cite"><a id="{anchor}" href="#ref-{number}" '
+            f'role="doc-noteref" aria-label="Source {number}">[{number}]</a></sup>'
+        )
+
+    def inline(self, text):
+        result = []
+        offset = 0
+        for match in INLINE.finditer(text):
+            result.append(escape(text[offset:match.start()]))
+            label, url, number, emphasis = match.groups()
+            if url:
+                if url == "../README.md":
+                    url = "../index.html"
+                elif url == "DEVELOPMENT.md":
+                    url = GITHUB_DOCS + url
+                result.append(f'<a href="{escape(url)}">{escape(label)}</a>')
+            elif number:
+                result.append(self.cite(int(number)))
+            else:
+                result.append(f"<em>{escape(emphasis)}</em>")
+            offset = match.end()
+        result.append(escape(text[offset:]))
+        return "".join(result)
+
+    def paragraphs(self, text, css=""):
+        tag = f'<p class="{css}">' if css else "<p>"
+        return "\n".join(
+            tag + self.inline(" ".join(paragraph.split())) + "</p>"
+            for paragraph in text.strip().split("\n\n")
+        )
+
+    def barriers_chart(self):
+        bars = []
+        for label, value in BARRIERS:
+            bars.append(
+                f'<li><span>{escape(label)}</span><span class="chart-track" aria-hidden="true">'
+                f'<span class="chart-bar" style="--share: {value * 2}%"></span></span>'
+                f'<strong>{value}%</strong></li>'
+            )
+        return (
+            '<figure class="data-figure" aria-labelledby="barriers-title">'
+            '<h3 id="barriers-title">Six most-cited barriers to AI adoption</h3>'
+            '<ol class="chart">' + "\n".join(bars) + '</ol>'
+            '<figcaption class="figure-note">RICS, Q1 2025. The survey received more than 2,200 responses '
+            'globally. Respondents could select up to three barriers. Bar lengths use a 0–50% scale.'
+            + self.cite(8) + '</figcaption></figure>'
+        )
+
+    def exchange_diagram(self):
+        return (
+            '<figure class="data-figure" aria-labelledby="exchange-title">'
+            '<h3 id="exchange-title">One release across two CDEs</h3>'
+            '<ol class="exchange-steps">'
+            '<li><strong>Engineering firm</strong>Issues a version from its own CDE.</li>'
+            '<li><strong>Shared interface</strong>Carries the exact version and its approval record.</li>'
+            '<li><strong>Owner</strong>Keeps the release and checks what it was approved for.</li>'
+            '</ol><figcaption class="figure-note">Proposed workflow. The project defines who can issue, '
+            'accept, and retain each release.' + self.cite(1) + '</figcaption></figure>'
+        )
+
+    def footnotes(self):
+        entries = []
+        for number, entry in self.references.items():
+            links = []
+            for position, anchor in enumerate(self.citations[number], 1):
+                links.append(
+                    f'<a href="#{anchor}" role="doc-backlink" '
+                    f'aria-label="Back to citation {position} for source {number}">↩{position}</a>'
+                )
+            entries.append(
+                f'<li id="ref-{number}" tabindex="-1">{self.inline(entry)}'
+                f'<span class="backlinks">{" ".join(links)}</span></li>'
+            )
+        return (
+            '<section class="footnotes" id="sources" aria-labelledby="sources-title">'
+            '<h2 id="sources-title">Sources</h2><ol>\n' + "\n".join(entries) + '\n</ol></section>'
+        )
+
+    def render(self, template):
+        template = re.sub(r"\{\{cite:(\d+)\}\}", lambda match: self.cite(int(match[1])), template)
+        article = [self.paragraphs(self.intro, "intro")]
+        for anchor, title, text in self.sections:
+            paragraphs = self.paragraphs(text)
+            if anchor == "data-ownership-across-organizational-boundaries":
+                paragraphs += "\n" + self.exchange_diagram()
+            if anchor == "ai-adoption-and-the-information-it-depends-on":
+                paragraphs += "\n" + self.barriers_chart()
+            article.append(f'<section id="{anchor}"><h2>{escape(title)}</h2>\n{paragraphs}\n</section>')
+        article.append(self.footnotes())
+        contents = [
+            f'<li><a href="#{anchor}">{escape(title)}</a></li>'
+            for anchor, title, _ in self.sections
+        ]
+        contents.append('<li><a href="#sources">Sources</a></li>')
+        return template.replace("<!-- contents -->", "\n".join(contents)).replace("<!-- article -->", "\n".join(article))
+
+
+class LocalReferences(HTMLParser):
+    def __init__(self, page):
+        super().__init__()
+        self.ids = set()
+        self.links = []
+        self.feed(page.read_text(encoding="utf-8"))
+
+    def handle_starttag(self, tag, attributes):
+        for attr, value in attributes:
+            if attr == "id":
+                if value in self.ids:
+                    raise ValueError(f"Duplicate HTML id: {value}")
+                self.ids.add(value)
+            if attr in ("href", "src") and value:
+                url = urlsplit(value)
+                if not (url.scheme or url.netloc):
+                    self.links.append(url)
+
+
+def check_local_links(output):
+    pages = {page: LocalReferences(page) for page in output.rglob("*.html")}
+    for page, references in pages.items():
+        for url in references.links:
+            target = (page.parent / unquote(url.path)).resolve() if url.path else page
+            if target.is_dir():
+                target = target / "index.html"
+            if not target.is_relative_to(output) or not target.is_file():
+                raise ValueError(f"{page.relative_to(output)} has a missing local link: {url.geturl()}")
+            if url.fragment and target in pages and unquote(url.fragment) not in pages[target].ids:
+                raise ValueError(f"{page.relative_to(output)} has a missing anchor: {url.geturl()}")
+
+
+def copy(source, destination):
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, destination)
+
+
+def preserve_published_pitch_links(app_deck, output):
+    for name in PUBLISHED_PITCH_RESOURCES:
+        copy(app_deck / name, output / name)
+
+    for name, title in (("preview.html", "Pitch overview"), ("speaker-notes.html", "Speaker notes")):
+        target = f"{app_deck.name}/{name}"
+        (output / name).write_text(
+            '<!doctype html>\n<html lang="en"><head><meta charset="utf-8">\n'
+            f'<title>{title} · Subsoil</title><link rel="canonical" href="{target}">\n'
+            f'<script>location.replace(\'{target}\' + location.hash);</script>\n'
+            f'</head><body><a href="{target}">{title}</a></body></html>\n',
+            encoding="utf-8",
+        )
+
+
+def export_site(output):
+    output = output.resolve()
+    if output == ROOT or ROOT.is_relative_to(output) or output.exists() and any(output.iterdir()):
+        raise ValueError("Choose a separate, empty output directory.")
+    output.mkdir(parents=True, exist_ok=True)
+
+    copy(SITE / "index.html", output / "index.html")
+    copy(SITE / "assets/site.css", output / "assets/site.css")
+    copy(SITE / "assets/open-cde.png", output / "assets/open-cde.png")
+    copy(ROOT / "assets/brand/subsoil-logo.svg", output / "assets/subsoil-logo.svg")
+
+    research = Research((ROOT / "docs/CDE_AI_RESEARCH.md").read_text(encoding="utf-8"))
+    research_dir = output / "research"
+    research_dir.mkdir()
+    template = (SITE / "research.html").read_text(encoding="utf-8")
+    (research_dir / "index.html").write_text(research.render(template), encoding="utf-8")
+
+    app_deck = ROOT / "presentations/project-data-exchange"
+    subprocess.run(
+        [sys.executable, str(app_deck / "tools/prepare_site.py"), "--output", str(output / app_deck.name)],
+        check=True,
+    )
+    preserve_published_pitch_links(app_deck, output)
+    governance_deck = ROOT / "presentations/open-cde-governance"
+    for name in GOVERNANCE_FILES:
+        copy(governance_deck / name, output / governance_deck.name / name)
+
+    handbook = (ROOT / "docs/handbook.html").read_text(encoding="utf-8")
+    handbook_links = {
+        "../presentations/project-data-exchange/index.html": "../project-data-exchange/index.html",
+        "../README.md": "../index.html",
+        "CDE_AI_RESEARCH.md": "../research/index.html",
+        "DEVELOPMENT.md": GITHUB_DOCS + "DEVELOPMENT.md",
+        "ARCHITECTURE.md": GITHUB_DOCS + "ARCHITECTURE.md",
+    }
+    for old, new in handbook_links.items():
+        handbook = handbook.replace(f'href="{old}"', f'href="{new}"')
+    handbook_dir = output / "handbook"
+    handbook_dir.mkdir()
+    (handbook_dir / "index.html").write_text(handbook, encoding="utf-8")
+
+    (output / ".nojekyll").write_text("", encoding="utf-8")
+    check_local_links(output)
+    print(f"Exported the homepage, research, handbook, and both pitches to {output}.")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True, help="Empty directory for the public site.")
+    export_site(parser.parse_args().output)

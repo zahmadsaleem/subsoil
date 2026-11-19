@@ -1,10 +1,15 @@
-name: Publish Pitch
+name: Publish Subsoil website
 
 on:
   push:
     branches: [main]
     paths:
-      - presentations/oci-aec-2026-10-28/**
+      - site/**
+      - assets/brand/subsoil-logo.svg
+      - docs/CDE_AI_RESEARCH.md
+      - docs/handbook.html
+      - presentations/open-cde-governance/**
+      - presentations/project-data-exchange/**
       - .github/workflows/pitch-pages.yml
   workflow_dispatch:
 
@@ -28,14 +33,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Validate and prepare public pitch
-        run: python3 presentations/oci-aec-2026-10-28/tools/prepare_site.py --output build/pitch-site
+      - name: Validate and prepare public site
+        run: python3 site/prepare_site.py --output build/subsoil-site
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload public pitch only
+      - name: Upload public site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: build/pitch-site
+          path: build/subsoil-site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A short pitch on sharing project data between independently built apps and organizations.">
+<title>Pitch</title>
+<style>
+:root {
+  --paper: #f5f2e9;
+  --ink: #163735;
+  --muted: #4d625b;
+  --teal: #216f62;
+  --sage: #e4ece0;
+  --lime: #d5edab;
+  --coral: #c36b50;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  background: #102d2e;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
+button { font: inherit; cursor: pointer; }
+a { color: inherit; text-underline-offset: .22em; }
+:is(a, button):focus-visible { outline: 3px solid var(--coral); outline-offset: 5px; }
+#viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(100dvh - 60px);
+  overflow: hidden;
+}
+#deck { position: relative; flex: none; width: 1600px; height: 900px; }
+.slide {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+  padding: 115px 86px 74px;
+  background: var(--paper);
+}
+.slide.active { display: block; }
+.slide-index {
+  position: absolute;
+  top: 51px;
+  left: 86px;
+  margin: 0;
+  color: var(--teal);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .12em;
+}
+h1 {
+  margin: 0 0 26px;
+  font-size: 91px;
+  line-height: .99;
+  letter-spacing: -.062em;
+  text-wrap: balance;
+}
+.lede {
+  max-width: 590px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 32px;
+  line-height: 1.29;
+  text-wrap: pretty;
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 46px;
+  height: 100%;
+}
+.copy, .illustration { min-width: 0; }
+.illustration {
+  display: block;
+  width: 100%;
+  height: 590px;
+  object-fit: contain;
+}
+.credit {
+  position: absolute;
+  left: 86px;
+  bottom: 42px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+}
+.problem { background: var(--sage); }
+.problem .split { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 70px; }
+.problem h1 { font-size: 84px; }
+.problem .illustration { height: 545px; }
+
+.dark {
+  color: var(--paper);
+  background: #173a36;
+  --muted: #ccdbcb;
+  --teal: #d5edab;
+}
+.standard h1 { max-width: 1000px; margin-top: 46px; }
+.standard .lede { max-width: 860px; }
+.exchange-flow {
+  display: grid;
+  grid-template-columns: 1fr 58px 1fr 58px 1fr;
+  gap: 26px;
+  align-items: start;
+  margin-top: 110px;
+}
+.exchange-step { padding-top: 22px; border-top: 1px solid #799589; }
+.exchange-step h2 { margin: 0 0 13px; font-size: 35px; letter-spacing: -.035em; }
+.exchange-step p { margin: 0; color: var(--muted); font-size: 23px; line-height: 1.35; }
+.exchange-arrow { margin-top: 19px; color: var(--lime); font-size: 35px; }
+
+.loop h1 { font-size: 75px; }
+.loop .illustration { height: 600px; }
+.loop-steps {
+  display: grid;
+  gap: 12px;
+  margin: 36px 0 0;
+  padding: 0 0 0 18px;
+  border-left: 2px solid #9ebbac;
+  list-style: none;
+  color: var(--teal);
+  font-size: 23px;
+  line-height: 1.36;
+}
+.example { background: #edf0e4; }
+.example h1 { font-size: 86px; }
+.example .illustration { height: 590px; }
+.slide-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 30px;
+  margin-top: 36px;
+  color: var(--teal);
+  font-size: 22px;
+  font-weight: 700;
+}
+.closing .split { grid-template-columns: minmax(0, .93fr) minmax(0, 1.07fr); gap: 74px; }
+.closing h1 { font-size: 85px; }
+.prompt {
+  align-self: center;
+  padding: 46px;
+  color: var(--ink);
+  background: var(--sage);
+}
+.prompt h2 { margin: 0 0 26px; font-size: 23px; }
+.prompt-excerpt { margin: 0 0 30px; font-size: 34px; line-height: 1.25; letter-spacing: -.025em; }
+.prompt-excerpt mark { color: #205f50; background: transparent; }
+.prompt #copy-prompt {
+  padding: 14px 23px;
+  border: 0;
+  color: var(--paper);
+  background: #20594d;
+  font-weight: 700;
+  font-size: 20px;
+}
+.prompt #copy-prompt:hover { background: #163f36; }
+.prompt small { margin-left: 15px; color: #35594f; font-size: 18px; }
+
+#controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  height: 60px;
+  padding: 0 24px;
+  color: #e3ece2;
+  font-size: 13px;
+}
+.group { display: flex; align-items: center; gap: 9px; }
+#controls button {
+  padding: 7px 11px;
+  border: 1px solid #527069;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  white-space: nowrap;
+}
+#controls button:hover { background: #294b45; }
+#controls button:disabled { opacity: .33; cursor: default; }
+#position { min-width: 55px; text-align: center; font-variant-numeric: tabular-nums; }
+.keys { margin-left: 9px; color: #a9bcb0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.progress {
+  position: fixed;
+  left: 0;
+  bottom: 57px;
+  z-index: 2;
+  height: 3px;
+  width: 0;
+  background: var(--lime);
+  transition: width 150ms linear;
+}
+#notes-panel {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 60px;
+  z-index: 3;
+  height: 250px;
+  overflow: auto;
+  padding: 20px 34px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.55;
+}
+#notes-panel h2 { margin: 0 0 12px; font-size: 20px; }
+#notes-panel p { max-width: 1050px; margin: 0 0 12px; }
+#notes-panel pre { max-width: 1050px; white-space: pre-wrap; overflow-wrap: anywhere; }
+#notes-panel a { color: #21685a; }
+body.notes-open #notes-panel { display: block; }
+body.notes-open #viewport { height: calc(100dvh - 310px); }
+body.notes-open .progress { bottom: 307px; }
+#help { max-width: 530px; padding: 32px; border: 0; background: var(--paper); color: var(--ink); }
+#help::backdrop { background: #102d30aa; }
+#help h2 { margin-top: 0; }
+#help dl { display: grid; grid-template-columns: 155px 1fr; gap: 16px; }
+#help dd { margin: 0; }
+#help button { padding: 8px 18px; border: 0; background: var(--ink); color: var(--paper); }
+
+@media (max-width: 800px) {
+  .keys { display: none; }
+  #controls { padding: 0 10px; gap: 8px; }
+  .group { gap: 6px; }
+  #controls button { padding: 7px 8px; }
+  #notes-panel { padding: 14px 18px; }
+}
+@media (max-width: 530px) {
+  #fullscreen, #print, #help-open { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress { transition: none; }
+}
+@page { size: 1600px 900px; margin: 0; }
+@media print {
+  html, body { width: 1600px; height: auto; overflow: visible; background: var(--paper); }
+  #viewport, body.notes-open #viewport { display: block; width: 1600px; height: auto; overflow: visible; }
+  #deck { width: 1600px; height: auto; transform: none !important; }
+  .slide, .slide.active {
+    display: block;
+    position: relative;
+    width: 1600px;
+    height: 900px;
+    break-after: page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .slide:last-child { break-after: auto; }
+  #controls, #notes-panel, .progress, #live, #help, #copy-status { display: none !important; }
+}
+</style>
+</head>
+<body>
+<main id="viewport" aria-label="Subsoil pitch">
+<div id="deck">
+<section class="slide cover active" id="slide-1" aria-labelledby="title-1" data-title="Building tools is only half the job">
+  <p class="slide-index" aria-label="Slide 1">01</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-1">Building tools is only half the job</h1>
+      <p class="lede">A small tool still needs the project data people already work with.</p>
+    </div>
+    <img class="illustration" src="assets/pitch-tool-and-models.png" width="1536" height="1024" alt="A laptop beside a structural model and a separate duct model.">
+  </div>
+  <p class="credit">Ahmad Saleem Z</p>
+  <aside class="speaker-note" hidden>
+<p>Say I want to check whether the openings in a structural model line up with the services model. With AI coding tools, it’s easier to put together a small app for that check. Then I have to get both models into it. When either one changes, the app needs a way to get the new version and the team needs to know which versions it checked.</p>
+  </aside>
+</section>
+
+<section class="slide problem" id="slide-2" aria-labelledby="title-2" data-title="Two apps need the same data">
+  <p class="slide-index" aria-label="Slide 2">02</p>
+  <div class="split">
+    <img class="illustration" src="assets/pitch-separated-files.png" width="1536" height="1024" alt="Separate trays of structural and services drawings with a marked-up copy between them.">
+    <div class="copy">
+      <h1 id="title-2">Two apps need the same data</h1>
+      <p class="lede">Each new tool can mean another export, another copy, and another place to check what changed.</p>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>The structural model is in one system and the services model is in another. Each system has its own way to get data out. I can export both and run the check today. Next week I have to find the right revisions again, and the result may end up in a third place. If the platform charges separately for API access, the team pays again to work with data it already paid to create and store.</p>
+<p>What I want is for a second app to pick up the data the first app used, do its part, and make the result available to whoever needs it next.</p>
+  </aside>
+</section>
+
+<section class="slide standard dark" id="slide-3" aria-labelledby="title-3" data-title="Use OCI to exchange project data">
+  <p class="slide-index" aria-label="Slide 3">03</p>
+  <h1 id="title-3">Use OCI to exchange project data</h1>
+  <p class="lede">An existing standard for sharing published versions across tools and organizations.</p>
+  <div class="exchange-flow">
+    <div class="exchange-step">
+      <h2>Choose a version</h2>
+      <p>Pass its exact reference to an app.</p>
+    </div>
+    <span class="exchange-arrow" aria-hidden="true">→</span>
+    <div class="exchange-step">
+      <h2>Open it in the app</h2>
+      <p>Read the selected version from its registry.</p>
+    </div>
+    <span class="exchange-arrow" aria-hidden="true">→</span>
+    <div class="exchange-step">
+      <h2>Publish the result</h2>
+      <p>Write to a registry you have access to.</p>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>My proposal is to use OCI, the Open Container Initiative standards used to package and distribute container images. The same standards can carry project files. An app can open a specific published version and publish an output using the same kind of registry API, even when the teams involved run different systems. <a href="https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md">OCI packaging specification</a> · <a href="https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md">OCI distribution specification</a></p>
+<p>The apps still need to agree on what’s in the package and how to interpret it. Subsoil’s proposed handoff lets a CDE tell an app which version to open. The app gets its own access and reads that version from the registry. A connection to the source system’s API can handle live queries and approved edits to the source. <a href="https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on">Subsoil architecture guide</a></p>
+  </aside>
+</section>
+
+<section class="slide loop" id="slide-4" aria-labelledby="title-4" data-title="One team’s output is the next team’s input">
+  <p class="slide-index" aria-label="Slide 4">04</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-4">One team’s output is the next team’s input</h1>
+      <p class="lede">Teams can iterate on shared data from the tools and systems they already use.</p>
+      <ul class="loop-steps">
+        <li>Services team proposes an opening change.</li>
+        <li>Structural team publishes a revised model.</li>
+        <li>Services team checks the new version.</li>
+      </ul>
+    </div>
+    <img class="illustration" src="assets/pitch-coordination-loop.png" width="1536" height="1024" alt="Two engineers check a duct route against an opening in a structural model.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>The services team opens the structural model in its own tool and sends back a proposed change to an opening, with the geometry and the clearance it needs. The structural engineer reviews it in their own tool and publishes an updated structural model. That version is the starting point for the services team’s next check.</p>
+<p>Each organization can keep its own system and decide what it shares. Each tool can keep its own way of working with the data. If an agent helps run the check, it can work from those same versions and return its findings for someone to review.</p>
+  </aside>
+</section>
+
+<section class="slide example" id="slide-5" aria-labelledby="title-5" data-title="IFClite and Subsoil">
+  <p class="slide-index" aria-label="Slide 5">05</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-5">IFClite and Subsoil</h1>
+      <p class="lede">IFC models can travel through a registry. Subsoil shows how an app can open an exact version.</p>
+      <div class="slide-links">
+        <a href="https://ifclite.dev/docs/guide/local-registry/">IFClite registry guide</a>
+        <a href="https://files.lab.madsolame.com/explore">Try the Subsoil demo</a>
+      </div>
+    </div>
+    <img class="illustration" src="assets/pitch-ifc-model.png" width="1536" height="1024" alt="A cutaway model showing an orange ventilation duct passing through a floor opening.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>IFClite gives us an example with real model data. Its experimental registry support lets an IFC tool open a model from an OCI registry. The proposed handoff adds a way for a project browser to pass the exact selected version to an app. <a href="https://ifclite.dev/docs/guide/local-registry/">IFClite model registry documentation</a></p>
+<p>You can try the handoff in Subsoil with a sample file. Open it in the separate starter editor, make a change, and publish a new version. Both versions are then visible back in Subsoil.</p>
+  </aside>
+</section>
+
+<section class="slide closing dark" id="slide-6" aria-labelledby="title-6" data-title="Build an app for your own workflow">
+  <p class="slide-index" aria-label="Slide 6">06</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-6">Build an app for your own workflow</h1>
+      <p class="lede">Test it in Subsoil, then try a registry you control.</p>
+      <div class="slide-links">
+        <a href="https://files.lab.madsolame.com/explore">Open the Subsoil demo</a>
+        <a href="https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on">Read the handoff guide</a>
+      </div>
+    </div>
+    <div class="prompt">
+      <h2>For your coding agent</h2>
+      <p class="prompt-excerpt">Using the OCI handoff protocol proposed by Subsoil, build or adapt an app that <mark>[describe what you want the app to do]</mark>.</p>
+      <button type="button" id="copy-prompt">Copy prompt</button>
+      <small id="copy-status" role="status"></small>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>Pick a task you actually want an app to do. Try it with a sample in Subsoil so you can see it open a specific version and, if it writes a result, publish that result where you choose. If your team wants to operate its own registry, try the same app with that connection and your own access rules.</p>
+<p>Copy this prompt to your coding agent and replace the bracketed text with your use case.</p>
+<pre><code>Using the OCI handoff protocol proposed by Subsoil, build or adapt an app that [describe what you want the app to do].
+
+Use these guides for the handoff and the local test.
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/DEVELOPMENT.md
+
+Help me register the app in a Subsoil demo workspace and test it locally at http://localhost:5173. Use a sample the app understands and open the exact version selected in Subsoil. If the app produces a result, let me publish it as a new version to a repository I select and can write to.
+
+Keep the registry and sign-in settings configurable. Show me what I would need to connect the same app to an OCI registry my team hosts or controls.</code></pre>
+<p><a href="https://files.lab.madsolame.com/explore">Open the Subsoil demo</a></p>
+  </aside>
+</section>
+</div>
+</main>
+<nav id="controls" aria-label="Pitch controls">
+  <div class="group"><a href="preview.html">Overview</a><span class="keys">← → navigate · N notes</span></div>
+  <div class="group">
+    <button id="prev" aria-label="Previous slide">←</button>
+    <span id="position" aria-label="Slide position"></span>
+    <button id="next" aria-label="Next slide">→</button>
+  </div>
+  <div class="group">
+    <button id="notes-toggle" aria-pressed="false" aria-controls="notes-panel">Notes</button>
+    <button id="fullscreen">Fullscreen</button>
+    <button id="print">Print</button>
+    <button id="help-open" aria-label="Keyboard shortcuts">?</button>
+  </div>
+</nav>
+<div class="progress" aria-hidden="true"></div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+<aside id="notes-panel" aria-label="Speaker notes" aria-hidden="true">
+  <h2 id="notes-title"></h2>
+  <div id="notes-content"></div>
+  <a href="speaker-notes.html">Read all speaker notes</a>
+</aside>
+<dialog id="help" aria-labelledby="help-title">
+  <h2 id="help-title">Presenting this deck</h2>
+  <dl>
+    <dt>← → or Page Up / Down</dt><dd>Previous or next slide</dd>
+    <dt>Space / Shift + Space</dt><dd>Next or previous slide</dd>
+    <dt>Home / End</dt><dd>First or last slide</dd>
+    <dt>N</dt><dd>Toggle speaker notes</dd>
+    <dt>F</dt><dd>Toggle fullscreen</dd>
+  </dl>
+  <button id="help-close">Close</button>
+</dialog>
+<script>
+(() => {
+  'use strict';
+  const element = id => document.getElementById(id);
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const viewport = element('viewport');
+  const deck = element('deck');
+  const notesButton = element('notes-toggle');
+  const notesPanel = element('notes-panel');
+  const help = element('help');
+  const previous = element('prev');
+  const next = element('next');
+  let current = 0;
+  let touchStart = null;
+
+  function fit() {
+    const scale = Math.min(viewport.clientWidth / 1600, viewport.clientHeight / 900);
+    deck.style.transform = `scale(${scale})`;
+  }
+
+  function hashIndex() {
+    const match = location.hash.match(/^#(?:slide-)?(\d+)$/);
+    return match ? Number(match[1]) - 1 : 0;
+  }
+
+  function show(index, updateHash = true) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    const slide = slides[current];
+    for (const candidate of slides) {
+      const active = candidate === slide;
+      candidate.classList.toggle('active', active);
+      candidate.setAttribute('aria-hidden', String(!active));
+      candidate.inert = !active;
+    }
+    const number = current + 1;
+    const title = slide.dataset.title;
+    element('position').textContent = `${String(number).padStart(2, '0')} / ${slides.length}`;
+    element('live').textContent = `Slide ${number} of ${slides.length}. ${title}`;
+    element('notes-title').textContent = title;
+    element('notes-content').innerHTML = slide.querySelector('.speaker-note').innerHTML;
+    document.title = `${number}/${slides.length} · ${title} · Pitch`;
+    document.querySelector('.progress').style.width = `${number / slides.length * 100}%`;
+    previous.disabled = current === 0;
+    next.disabled = current === slides.length - 1;
+    if (updateHash) history.replaceState(null, '', `#slide-${number}`);
+  }
+
+  function toggleNotes() {
+    const open = document.body.classList.toggle('notes-open');
+    notesButton.setAttribute('aria-pressed', String(open));
+    notesPanel.setAttribute('aria-hidden', String(!open));
+    fit();
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch {
+      element('live').textContent = 'Fullscreen is unavailable in this browser.';
+    }
+  }
+
+  async function copyPrompt() {
+    const prompt = element('slide-6').querySelector('.speaker-note pre').textContent.trim();
+    const status = element('copy-status');
+    try {
+      await navigator.clipboard.writeText(prompt);
+      status.textContent = 'Copied';
+    } catch {
+      const field = document.createElement('textarea');
+      field.value = prompt;
+      field.className = 'sr-only';
+      document.body.append(field);
+      field.select();
+      let copied = false;
+      try { copied = document.execCommand('copy'); } catch {}
+      field.remove();
+      element('copy-prompt').focus();
+      status.textContent = copied ? 'Copied' : 'Copy from the speaker notes.';
+    }
+  }
+
+  previous.addEventListener('click', () => show(current - 1));
+  next.addEventListener('click', () => show(current + 1));
+  notesButton.addEventListener('click', toggleNotes);
+  element('fullscreen').addEventListener('click', toggleFullscreen);
+  element('print').addEventListener('click', () => window.print());
+  element('help-open').addEventListener('click', () => help.showModal());
+  element('help-close').addEventListener('click', () => help.close());
+  element('copy-prompt').addEventListener('click', copyPrompt);
+  document.addEventListener('keydown', event => {
+    if (help.open || event.altKey || event.ctrlKey || event.metaKey ||
+        /INPUT|TEXTAREA|SELECT/.test(event.target.tagName)) return;
+    switch (event.key) {
+      case ' ':
+        if (event.target.closest('button, a')) return;
+        event.preventDefault();
+        show(current + (event.shiftKey ? -1 : 1));
+        break;
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown':
+        event.preventDefault();
+        show(current + 1);
+        break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp':
+        event.preventDefault();
+        show(current - 1);
+        break;
+      case 'Home': event.preventDefault(); show(0); break;
+      case 'End': event.preventDefault(); show(slides.length - 1); break;
+      case 'n': case 'N': toggleNotes(); break;
+      case 'f': case 'F': toggleFullscreen(); break;
+      case '?': help.showModal(); break;
+    }
+  });
+  viewport.addEventListener('touchstart', event => {
+    if (event.touches.length === 1) touchStart = event.touches[0];
+  }, {passive: true});
+  viewport.addEventListener('touchend', event => {
+    if (!touchStart) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStart.clientX;
+    const dy = touch.clientY - touchStart.clientY;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.5) show(current + (dx < 0 ? 1 : -1));
+    touchStart = null;
+  }, {passive: true});
+  window.addEventListener('beforeprint', () => {
+    for (const slide of slides) {
+      slide.inert = false;
+      slide.removeAttribute('aria-hidden');
+    }
+  });
+  window.addEventListener('afterprint', () => show(current, false));
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => show(hashIndex(), false));
+  show(hashIndex(), false);
+  fit();
+})();
+</script>
+</body>
+</html>

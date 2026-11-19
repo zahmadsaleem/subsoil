@@ -1,0 +1,47 @@
+{
+  "slides": 6,
+  "notes": 6,
+  "slideTitles": [
+    "Building tools is only half the job",
+    "Two apps need the same data",
+    "Use OCI to exchange project data",
+    "One team’s output is the next team’s input",
+    "IFClite and Subsoil",
+    "Build an app for your own workflow"
+  ],
+  "presenter": "Ahmad Saleem Z",
+  "notesMatch": true,
+  "relativeLinksResolve": [
+    "assets/pitch-coordination-loop.png",
+    "assets/pitch-ifc-model.png",
+    "assets/pitch-separated-files.png",
+    "assets/pitch-tool-and-models.png",
+    "index.html",
+    "preview.html",
+    "previews/slide-01.png",
+    "previews/slide-02.png",
+    "previews/slide-03.png",
+    "previews/slide-04.png",
+    "previews/slide-05.png",
+    "previews/slide-06.png",
+    "speaker-notes.html"
+  ],
+  "legacyDraftFiles": 0,
+  "publicFiles": {
+    "index.html": "2e28c21c49d8aff8940ef0e77bed17cc93265d52768ab4d7b3d49ded500063be",
+    "speaker-notes.html": "816ef856d6f6b95d5f934a4880507d17b97a9e7941a7480fb25aa8adb52248fa",
+    "preview.html": "6c9cd1fc89e0bcb946cfd69b74b04942fc08c94f9b0b44d0670d194935c27736",
+    "sources.json": "3991553f177171cade8a0b8f1d78ea98371723913b37e7f53aa91a00c753ee1c",
+    "previews/overview.png": "599e41800f19c2f6d229676b1cce043fc7b251661de3d3c3def335b30e7748d6",
+    "assets/pitch-tool-and-models.png": "acc5f3ef124692f898d112cbb03d2a116eadb294a463a22e253221548cc5f4db",
+    "assets/pitch-separated-files.png": "36fb21a2665b6773192210abfd2f132e3d5ef70f2dd56a400e6fac039668e168",
+    "assets/pitch-coordination-loop.png": "2f865a2ced9e2c826ae295dd1810c62f91e838ba4310d7c6398a14a171b98994",
+    "assets/pitch-ifc-model.png": "f1b8bece3b8a62f4b59df56309a20f3d1ea6e18e1d6a4a3e39389dc60d0cf456",
+    "previews/slide-01.png": "57bc6098139b20ec846de0e1f5835ff849a4065b77eb258d8e14d0f151d03dfb",
+    "previews/slide-02.png": "c82410333bfc90299eb2963436516fc72855758e05693b2edd87ce2a2bc7b2e0",
+    "previews/slide-03.png": "4daafdb31ef47be8aad29c34bbd082e04d7ff8b50e5393ad08ce7efeae01ea29",
+    "previews/slide-04.png": "33f65b1f270db1ab0e97e0ef39ed05ff5b5471a6f9fcb84f7cff2998063dceaa",
+    "previews/slide-05.png": "98483b7618e193aed04f2855f789c21a79fecb974cb59ad5fef93d4e29eab5b6",
+    "previews/slide-06.png": "fd5cf943023185f815cdf87dc5446af2dc51ce538767806dea0a2ee436251c00"
+  }
+}

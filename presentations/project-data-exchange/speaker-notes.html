@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes · Pitch</title>
+<style>
+:root { color: #163735; background: #f5f2e9; font: 18px/1.6 Arial, Helvetica, sans-serif; }
+body { max-width: 820px; margin: 58px auto; padding: 0 25px; }
+header { padding-bottom: 25px; border-bottom: 1px solid #a8b8a7; }
+h1, h2 { line-height: 1.1; letter-spacing: -.035em; }
+h1 { margin: 0 0 20px; font-size: 52px; }
+h2 { margin: 0 0 20px; font-size: 33px; }
+article { margin: 35px 0 0; padding: 0 0 25px; border-bottom: 1px solid #a8b8a7; }
+.slide-index { color: #216b5e; font-weight: 700; letter-spacing: .12em; }
+a { color: #21685a; text-underline-offset: .22em; }
+pre { padding: 24px; background: #e4ece0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px; }
+@media print {
+  body { margin: 0; max-width: none; font-size: 11pt; }
+  header nav { display: none; }
+  article { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Speaker notes</h1>
+  <nav aria-label="Pitch views"><a href="index.html">Present the pitch</a> · <a href="preview.html">Browse the slides</a></nav>
+</header>
+<main>
+<!-- Notes start -->
+<article id="note-1">
+<p class="slide-index">01</p>
+<h2>Building tools is only half the job</h2>
+<p>Say I want to check whether the openings in a structural model line up with the services model. With AI coding tools, it’s easier to put together a small app for that check. Then I have to get both models into it. When either one changes, the app needs a way to get the new version and the team needs to know which versions it checked.</p>
+</article>
+<article id="note-2">
+<p class="slide-index">02</p>
+<h2>Two apps need the same data</h2>
+<p>The structural model is in one system and the services model is in another. Each system has its own way to get data out. I can export both and run the check today. Next week I have to find the right revisions again, and the result may end up in a third place. If the platform charges separately for API access, the team pays again to work with data it already paid to create and store.</p>
+<p>What I want is for a second app to pick up the data the first app used, do its part, and make the result available to whoever needs it next.</p>
+</article>
+<article id="note-3">
+<p class="slide-index">03</p>
+<h2>Use OCI to exchange project data</h2>
+<p>My proposal is to use OCI, the Open Container Initiative standards used to package and distribute container images. The same standards can carry project files. An app can open a specific published version and publish an output using the same kind of registry API, even when the teams involved run different systems. <a href="https://github.com/opencontainers/image-spec/blob/v1.1.1/manifest.md">OCI packaging specification</a> · <a href="https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md">OCI distribution specification</a></p>
+<p>The apps still need to agree on what’s in the package and how to interpret it. Subsoil’s proposed handoff lets a CDE tell an app which version to open. The app gets its own access and reads that version from the registry. A connection to the source system’s API can handle live queries and approved edits to the source. <a href="https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on">Subsoil architecture guide</a></p>
+</article>
+<article id="note-4">
+<p class="slide-index">04</p>
+<h2>One team’s output is the next team’s input</h2>
+<p>The services team opens the structural model in its own tool and sends back a proposed change to an opening, with the geometry and the clearance it needs. The structural engineer reviews it in their own tool and publishes an updated structural model. That version is the starting point for the services team’s next check.</p>
+<p>Each organization can keep its own system and decide what it shares. Each tool can keep its own way of working with the data. If an agent helps run the check, it can work from those same versions and return its findings for someone to review.</p>
+</article>
+<article id="note-5">
+<p class="slide-index">05</p>
+<h2>IFClite and Subsoil</h2>
+<p>IFClite gives us an example with real model data. Its experimental registry support lets an IFC tool open a model from an OCI registry. The proposed handoff adds a way for a project browser to pass the exact selected version to an app. <a href="https://ifclite.dev/docs/guide/local-registry/">IFClite model registry documentation</a></p>
+<p>You can try the handoff in Subsoil with a sample file. Open it in the separate starter editor, make a change, and publish a new version. Both versions are then visible back in Subsoil.</p>
+</article>
+<article id="note-6">
+<p class="slide-index">06</p>
+<h2>Build an app for your own workflow</h2>
+<p>Pick a task you actually want an app to do. Try it with a sample in Subsoil so you can see it open a specific version and, if it writes a result, publish that result where you choose. If your team wants to operate its own registry, try the same app with that connection and your own access rules.</p>
+<p>Copy this prompt to your coding agent and replace the bracketed text with your use case.</p>
+<pre><code>Using the OCI handoff protocol proposed by Subsoil, build or adapt an app that [describe what you want the app to do].
+
+Use these guides for the handoff and the local test.
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/ARCHITECTURE.md#what-implementations-agree-on
+https://github.com/zahmadsaleem/subsoil/blob/main/docs/DEVELOPMENT.md
+
+Help me register the app in a Subsoil demo workspace and test it locally at http://localhost:5173. Use a sample the app understands and open the exact version selected in Subsoil. If the app produces a result, let me publish it as a new version to a repository I select and can write to.
+
+Keep the registry and sign-in settings configurable. Show me what I would need to connect the same app to an OCI registry my team hosts or controls.</code></pre>
+<p><a href="https://files.lab.madsolame.com/explore">Open the Subsoil demo</a></p>
+</article>
+<!-- Notes end -->
+</main>
+</body>
+</html>

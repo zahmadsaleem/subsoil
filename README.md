@@ -5,6 +5,15 @@ Browse project files and their versions, open a version in an independent app,
 and publish revisions directly to Zot. Keycloak handles sign-in and issues
 repository access tokens.
 
+OCI defines the packaging and delivery specifications. Tools such as ORAS and
+other compatible clients and registries can participate independently of Subsoil
+and its model profile.
+
+[Visit the Subsoil website](https://madsolame.com/subsoil/).
+[Read the pitch and speaker notes in Markdown](docs/PITCH.md).
+[Open the practical handbook](docs/handbook.html).
+[Read the research on CDEs, information flow, and AI](docs/CDE_AI_RESEARCH.md).
+
 ## Try it
 
 Open the [hosted demo](https://files.lab.madsolame.com/explore), create an

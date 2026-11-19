@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A proposal for governing project releases across independently operated common data environments.">
+<title>Open CDE governance</title>
+<link rel="stylesheet" href="deck.css">
+<script src="deck.js" defer></script>
+</head>
+<body>
+<main id="viewport" aria-label="Open CDE governance presentation">
+<div id="deck">
+<section class="slide cover active" id="slide-1" aria-labelledby="title-1" data-title="Who gets to keep the project record?">
+  <p class="slide-index" aria-label="Slide 1">01</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-1">Who gets to keep the project record?</h1>
+      <p class="lede">Teams need their records long after a project closes.</p>
+    </div>
+    <img class="art" src="assets/project-record.png" width="1536" height="1024" alt="An engineer works at a desk with folders from three projects.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>An engineer can work on three jobs and spend the week in three clients’ common data environments, or CDEs. When a job closes, the firm needs a record of what it issued. Years later, the owner needs to open the model and see what it was approved for. <a href="https://www.ice.org.uk/media/3k0h5ofz/nc-ddtg-future-of-cdes-paper.pdf">Infrastructure Client Group on project CDEs</a></p>
+  </aside>
+</section>
+
+<section class="slide problem" id="slide-2" aria-labelledby="title-2" data-title="The handoff is where context gets lost">
+  <p class="slide-index" aria-label="Slide 2">02</p>
+  <div class="split">
+    <img class="art" src="assets/handoff.png" width="1536" height="1024" alt="A copy of a drawing reaches a second file tray while its approval slip stays behind.">
+    <div class="copy">
+      <h1 id="title-2">The handoff is where context gets lost</h1>
+      <p class="lede">The receiving team needs to know which version it can use.</p>
+    </div>
+  </div>
+  <aside class="speaker-note" hidden>
+<p>Say the firm sends an IFC to the owner. If the two CDEs handle revisions and status differently, someone may have to enter that information again and match the file to its approval. That work comes back when the owner moves the records to another system. <a href="https://ukbimframework.org/wp-content/uploads/2021/02/Guidance-Part-C_Facilitating-the-common-data-environment-workflow-and-technical-solutions_Edition-2.pdf#page=16">UK BIM Framework guidance on transferring metadata</a></p>
+  </aside>
+</section>
+
+<section class="slide custody" id="slide-3" aria-labelledby="title-3" data-title="Each organization keeps control of its data">
+  <p class="slide-index" aria-label="Slide 3">03</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-3">Each organization keeps control of its data</h1>
+      <p class="lede">The project agrees who can issue, accept, and keep each release.</p>
+    </div>
+    <img class="art" src="assets/own-records.png" width="1536" height="1024" alt="Separate archives hold the engineer’s working files and the owner’s retained release.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>The engineering firm keeps its working models in a system it controls and shares the versions it’s responsible for issuing. The owner keeps the approved model and its release record in its own system. Both teams can consult the records they’re entitled to keep after the project account closes.</p>
+  </aside>
+</section>
+
+<section class="slide exchange dark" id="slide-4" aria-labelledby="title-4" data-title="Connect the systems teams already use">
+  <p class="slide-index" aria-label="Slide 4">04</p>
+  <h1 id="title-4">Connect the systems teams already use</h1>
+  <p class="lede">Use OCI as the common way to exchange issued versions.</p>
+  <ol class="flow" aria-label="Proposed release exchange">
+    <li class="stage">
+      <h2>Existing CDE</h2>
+      <p>Review and issue</p>
+    </li>
+    <li class="flow-arrow" aria-hidden="true">↔</li>
+    <li class="stage exchange-stage">
+      <h2>OCI exchange</h2>
+      <p>Exact version and approval record</p>
+    </li>
+    <li class="flow-arrow" aria-hidden="true">↔</li>
+    <li class="stage">
+      <h2>Owner’s systems</h2>
+      <p>Retain the release and use the data</p>
+    </li>
+  </ol>
+  <aside class="speaker-note" hidden>
+<p>The firm can keep review in its existing CDE. A connector could send an issued model and its approval record over OCI. The owner can load quantities from that model into its lake or warehouse and issue a table back through the same exchange, with a link to the model it came from. <a href="https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md">OCI Distribution Specification</a></p>
+  </aside>
+</section>
+
+<section class="slide pilot" id="slide-5" aria-labelledby="title-5" data-title="Prove it on one model">
+  <p class="slide-index" aria-label="Slide 5">05</p>
+  <h1 id="title-5">Prove it on one model</h1>
+  <p class="lede">Show that the project can control what gets issued and recover an earlier release.</p>
+  <ol class="milestones" aria-label="Pilot release sequence">
+    <li>
+      <h2>Draft</h2>
+      <p>The author submits the model.</p>
+    </li>
+    <li>
+      <h2>First release</h2>
+      <p>The designated people authorize and accept it.</p>
+    </li>
+    <li>
+      <h2>Next revision</h2>
+      <p>The owner can still verify the first approval.</p>
+    </li>
+  </ol>
+  <p class="release-rule">Block unauthorized releases in the CDE and registry API.</p>
+  <aside class="speaker-note" hidden>
+<p>In the pilot, an author can submit a draft. Both the CDE and the registry API must block an unauthorized release. Have the designated people authorize and accept the model, then issue a second revision. The owner should still be able to verify the first approval.</p>
+  </aside>
+</section>
+
+<section class="slide closing" id="slide-6" aria-labelledby="title-6" data-title="Bring one real handoff">
+  <p class="slide-index" aria-label="Slide 6">06</p>
+  <div class="split">
+    <div class="copy">
+      <h1 id="title-6">Bring one real handoff</h1>
+      <p class="lede">Two organizations, one model, and the project’s approval rules.</p>
+    </div>
+    <img class="art" src="assets/release-in-hand.png" width="1536" height="1024" alt="One person hands an issued model folder and its approval slip to another.">
+  </div>
+  <aside class="speaker-note" hidden>
+<p>Start with the two systems the teams already use. Once the release has crossed, disconnect the source. Ask the owner to open the exact model and show who approved it and for what use. Then try the same exchange with a compatible replacement on one side.</p>
+  </aside>
+</section>
+</div>
+</main>
+<nav id="controls" aria-label="Presentation controls">
+  <div class="group">
+    <a href="speaker-notes.html">All notes</a>
+    <span class="keys">← → navigate · N notes</span>
+  </div>
+  <div class="group">
+    <button id="prev" aria-label="Previous slide">←</button>
+    <span id="position" aria-label="Slide position"></span>
+    <button id="next" aria-label="Next slide">→</button>
+  </div>
+  <div class="group">
+    <button id="notes-toggle" aria-pressed="false" aria-controls="notes-panel">Notes</button>
+    <button id="fullscreen">Fullscreen</button>
+    <button id="print">Print</button>
+    <button id="help-open" aria-label="Keyboard shortcuts">?</button>
+  </div>
+</nav>
+<div class="progress" aria-hidden="true"></div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+<aside id="notes-panel" aria-label="Speaker notes" aria-hidden="true">
+  <h2 id="notes-title"></h2>
+  <div id="notes-content"></div>
+</aside>
+<dialog id="help" aria-labelledby="help-title">
+  <h2 id="help-title">Presenting this deck</h2>
+  <dl>
+    <dt>← → or Page Up / Down</dt><dd>Previous or next slide</dd>
+    <dt>Space / Shift + Space</dt><dd>Next or previous slide</dd>
+    <dt>Home / End</dt><dd>First or last slide</dd>
+    <dt>N</dt><dd>Toggle speaker notes</dd>
+    <dt>F</dt><dd>Toggle fullscreen</dd>
+  </dl>
+  <button id="help-close">Close</button>
+</dialog>
+</body>
+</html>

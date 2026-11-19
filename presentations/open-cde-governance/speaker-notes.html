@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speaker notes · Open CDE governance</title>
+<style>
+:root { color: #173a36; background: #f5f1e7; font: 18px/1.6 Arial, Helvetica, sans-serif; }
+body { max-width: 820px; margin: 56px auto; padding: 0 25px; }
+header { padding-bottom: 25px; border-bottom: 1px solid #a8b8a7; }
+h1, h2 { line-height: 1.1; letter-spacing: -.035em; }
+h1 { margin: 0 0 20px; font-size: 48px; }
+h2 { margin: 0 0 16px; font-size: 32px; }
+article { margin: 35px 0 0; padding: 0 0 25px; border-bottom: 1px solid #a8b8a7; }
+.slide-index { color: #246e61; font-weight: 700; letter-spacing: .12em; }
+a { color: #246e61; text-underline-offset: .22em; }
+@media print {
+  body { margin: 0; max-width: none; font-size: 11pt; }
+  header a { display: none; }
+  article { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Open CDE governance</h1>
+  <a href="index.html">Present the deck</a>
+</header>
+<main aria-label="Speaker notes">
+<!-- Notes start -->
+<article id="note-1">
+  <p class="slide-index" aria-label="Slide 1">01</p>
+  <h2><a href="index.html#slide-1">Who gets to keep the project record?</a></h2>
+<p>An engineer can work on three jobs and spend the week in three clients’ common data environments, or CDEs. When a job closes, the firm needs a record of what it issued. Years later, the owner needs to open the model and see what it was approved for. <a href="https://www.ice.org.uk/media/3k0h5ofz/nc-ddtg-future-of-cdes-paper.pdf">Infrastructure Client Group on project CDEs</a></p>
+</article>
+<article id="note-2">
+  <p class="slide-index" aria-label="Slide 2">02</p>
+  <h2><a href="index.html#slide-2">The handoff is where context gets lost</a></h2>
+<p>Say the firm sends an IFC to the owner. If the two CDEs handle revisions and status differently, someone may have to enter that information again and match the file to its approval. That work comes back when the owner moves the records to another system. <a href="https://ukbimframework.org/wp-content/uploads/2021/02/Guidance-Part-C_Facilitating-the-common-data-environment-workflow-and-technical-solutions_Edition-2.pdf#page=16">UK BIM Framework guidance on transferring metadata</a></p>
+</article>
+<article id="note-3">
+  <p class="slide-index" aria-label="Slide 3">03</p>
+  <h2><a href="index.html#slide-3">Each organization keeps control of its data</a></h2>
+<p>The engineering firm keeps its working models in a system it controls and shares the versions it’s responsible for issuing. The owner keeps the approved model and its release record in its own system. Both teams can consult the records they’re entitled to keep after the project account closes.</p>
+</article>
+<article id="note-4">
+  <p class="slide-index" aria-label="Slide 4">04</p>
+  <h2><a href="index.html#slide-4">Connect the systems teams already use</a></h2>
+<p>The firm can keep review in its existing CDE. A connector could send an issued model and its approval record over OCI. The owner can load quantities from that model into its lake or warehouse and issue a table back through the same exchange, with a link to the model it came from. <a href="https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md">OCI Distribution Specification</a></p>
+</article>
+<article id="note-5">
+  <p class="slide-index" aria-label="Slide 5">05</p>
+  <h2><a href="index.html#slide-5">Prove it on one model</a></h2>
+<p>In the pilot, an author can submit a draft. Both the CDE and the registry API must block an unauthorized release. Have the designated people authorize and accept the model, then issue a second revision. The owner should still be able to verify the first approval.</p>
+</article>
+<article id="note-6">
+  <p class="slide-index" aria-label="Slide 6">06</p>
+  <h2><a href="index.html#slide-6">Bring one real handoff</a></h2>
+<p>Start with the two systems the teams already use. Once the release has crossed, disconnect the source. Ask the owner to open the exact model and show who approved it and for what use. Then try the same exchange with a compatible replacement on one side.</p>
+</article>
+<!-- Notes end -->
+</main>
+</body>
+</html>
