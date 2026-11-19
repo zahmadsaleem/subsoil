@@ -2,32 +2,36 @@
 
 ## “I already shared it.”
 
-You’re on the design team. You send the contractor a link to a model for
-review. The contractor gets a sign-in screen and can’t open the model. You
-ask the project administrator to grant access. While the contractor waits,
-you email them a copy to review. A week later, the contractor can open the
-link, and there’s a newer version in the folder. They ask which version to
-work from. You check the folder, your sent email, and the review notes. You
-remember settling this already.
+You’re on the design team. You send the contractor a link to the model so
+he can review the duct layout above a corridor ceiling. The contractor gets
+a sign-in screen and can’t open the model. You ask the project administrator
+to grant access. While the contractor waits, you export the duct layout as
+a PDF and email it to him anyway. A week later, he decides to open the link
+again and finds a newer version of the model in the folder. By now he’s
+confused and calls you to ask which layout his crew should follow. You pull
+up everything you sent and realize this was already settled.
 
-On another project, the client needs the same report uploaded to their
-system. Their form asks for information you entered when you issued it. You
-fill it in again. Later, someone new joins the project and asks where to find
-the versions they can work from. You explain which folder to use, which links
-still work, and who to ask when the two systems disagree.
+On another project, you file an inspection report on a cracked concrete
+floor in your firm’s project folder. The client needs a copy in their
+document portal, so you upload it there and enter the report number and
+revision again. Later, a new colleague is going to the site to see whether
+the cracks have widened. They ask where to find the photos and measurements
+from the first inspection. You walk them through the project’s dense BIM
+manual, answering questions as you go and hoping it all makes sense.
 
 By the time someone says they’re sick of the CDE, there’s usually a whole
 afternoon behind that sentence. The client needs a record of what was issued.
 The contractor needs to know what they can build from. The designer needs
-space to work on something before sharing it. Each of those needs makes
-sense. So why do the people doing the work spend so much time making sure
-that what everyone knows about a file travels with the file itself?
+space to work on something before sharing it. Those are all reasonable
+needs. So why do people spend so much time checking which version was
+reviewed, what it was issued for, and where to find the notes or measurements
+that go with it?
 
 On one metro extension, teams used four platforms and email side by side.
-A reply could arrive in one system and have to be copied into another to
-keep the record complete. In a construction survey in Japan, the most
-frequently reported difficulty with sharing information was that the tools
-and methods varied from one project to the next. [Metro case study](https://www.mdpi.com/2412-3811/10/10/266) · [Construction survey](https://prtimes.jp/main/html/rd/p/000000042.000105632.html)
+A document controller might have to copy a client’s reply from one system
+into another to keep the project record complete. In a construction survey
+in Japan, the most frequently reported difficulty with sharing information
+was that the tools and methods varied from one project to the next. [Metro case study](https://www.mdpi.com/2412-3811/10/10/266) · [Construction survey](https://prtimes.jp/main/html/rd/p/000000042.000105632.html)
 
 ## Open it in the tool you already use
 
