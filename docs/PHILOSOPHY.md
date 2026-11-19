@@ -2,11 +2,13 @@
 
 ## “I already shared it.”
 
-You send someone a link to a project file. They get a sign-in screen. You
-request access for them, then download a copy and send it while they wait. A
-week later, someone asks which copy the team reviewed. You open the folder,
-then the email thread, then the meeting notes. You remember settling this
-already.
+You’re on the design team. You send the contractor a link to a model for
+review. The contractor gets a sign-in screen and can’t open the model. You
+ask the project administrator to grant access. While the contractor waits,
+you email them a copy to review. A week later, the contractor can open the
+link, and there’s a newer version in the folder. They ask which version to
+work from. You check the folder, your sent email, and the review notes. You
+remember settling this already.
 
 On another project, the client needs the same report uploaded to their
 system. Their form asks for information you entered when you issued it. You
