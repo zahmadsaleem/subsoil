@@ -173,9 +173,10 @@ immutable version names needs to enforce that policy at the destination.
 
 ## The Subsoil example
 
-Subsoil is the CDE, Zot is the registry, and Keycloak issues tokens.
-Envoy validates those tokens at the public registry address. The demo
-provisions a private repository per verified account, binds registered apps
+Subsoil is the CDE, Zot stores the files, and Keycloak issues tokens.
+Caddy terminates HTTPS and routes requests to the CDE, Keycloak, or the
+registry. Envoy validates tokens and handles browser CORS in front of Zot.
+The demo provisions a private repository per verified account, binds registered apps
 to that workspace, and accepts browser apps on `http://localhost:5173`.
 Start by [connecting an app](DEVELOPMENT.md) and publishing a new version in
 that workspace. To check a connection to another registry, open a version

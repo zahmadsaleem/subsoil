@@ -1,0 +1,11 @@
+---
+all:
+  hosts:
+    subsoil_demo:
+      ansible_host: 104.233.8.160
+      ansible_user: deploy
+      subsoil_checkout: /home/deploy/subsoil-cde
+      subsoil_compose_project: subsoil-cde
+      subsoil_files_host: cde.subsoil.dev
+      subsoil_registry_host: registry.subsoil.dev
+      subsoil_auth_host: auth.subsoil.dev

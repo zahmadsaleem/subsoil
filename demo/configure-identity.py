@@ -70,8 +70,9 @@ def configure():
                 "config": {"access.token.claim": "true", "introspection.token.claim": "true"},
             })
 
+    local_demo = os.getenv("LOCAL_DEMO") == "true"
     smtp = None
-    if os.getenv("LOCAL_DEMO") == "true":
+    if local_demo:
         smtp = {"host": "mailpit", "port": "1025", "from": "demo@subsoil.test"}
     else:
         file = Path("/settings/smtp.json")
@@ -132,12 +133,18 @@ def configure():
         })
 
     browser_path = "/clients/" + client("subsoil-browser")["id"]
-    if os.getenv("LOCAL_DEMO") == "true":
-        browser = admin(browser_path)
+    browser = admin(browser_path)
+    callbacks = browser["redirectUris"]
+    if local_demo:
         callback = "http://localhost:5080/sign-in/callback"
-        if callback not in browser["redirectUris"]:
-            browser["redirectUris"].append(callback)
-            admin(browser_path, "PUT", browser)
+        if callback not in callbacks:
+            callbacks = [*callbacks, callback]
+    else:
+        settings = json.loads(Path("/settings/subsoil.json").read_text())
+        callbacks = [settings["cde"]["origin"] + "/sign-in/callback"]
+    if browser["redirectUris"] != callbacks:
+        browser["redirectUris"] = callbacks
+        admin(browser_path, "PUT", browser)
 
     scopes = {scope["name"]: scope for scope in admin("/client-scopes")}
     for name, label in (

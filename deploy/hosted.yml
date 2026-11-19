@@ -6,10 +6,13 @@
   vars:
     subsoil_repository: https://github.com/zahmadsaleem/subsoil.git
     subsoil_revision: main
-    subsoil_checkout: "{{ ansible_facts.user_dir }}/subsoil"
+    subsoil_deploy_dir: "{{ subsoil_checkout | default(ansible_facts.user_dir ~ '/subsoil') }}"
+    subsoil_deploy_project: "{{ subsoil_compose_project | default('subsoil-hosted') }}"
     subsoil_compose:
       - docker
       - compose
+      - --project-name
+      - "{{ subsoil_deploy_project }}"
       - --env-file
       - build/hosted/compose.env
       - -f
@@ -28,16 +31,17 @@
           - subsoil_auth_host | default('') | length > 0
         fail_msg: Set subsoil_files_host, subsoil_registry_host, and subsoil_auth_host.
 
-    - name: Require a non-root deployment operator
+    - name: Check the operator, checkout path, and Compose project
       ansible.builtin.assert:
         that:
           - ansible_facts.user_uid != 0
-          - subsoil_checkout.startswith('/')
-        fail_msg: Connect as the deployment operator and use an absolute checkout path.
+          - subsoil_deploy_dir.startswith('/')
+          - subsoil_deploy_project is match('^[a-z0-9][a-z0-9_-]*$')
+        fail_msg: Connect as the deployment operator and use an absolute checkout path and valid Compose project name.
 
     - name: Check whether this checkout already has hosted credentials
       ansible.builtin.stat:
-        path: "{{ subsoil_checkout }}/build/hosted/compose.env"
+        path: "{{ subsoil_deploy_dir }}/build/hosted/compose.env"
       register: subsoil_hosted_env
 
     - name: Refuse to generate new credentials for an existing hosted project
@@ -45,7 +49,13 @@
       block:
         - name: Check for existing hosted volumes
           ansible.builtin.command:
-            argv: [docker, volume, ls, --quiet, --filter, label=com.docker.compose.project=subsoil-hosted]
+            argv:
+              - docker
+              - volume
+              - ls
+              - --quiet
+              - --filter
+              - "label=com.docker.compose.project={{ subsoil_deploy_project }}"
           become: true
           check_mode: false
           changed_when: false
@@ -59,7 +69,7 @@
     - name: Check out Subsoil
       ansible.builtin.git:
         repo: "{{ subsoil_repository }}"
-        dest: "{{ subsoil_checkout }}"
+        dest: "{{ subsoil_deploy_dir }}"
         version: "{{ subsoil_revision }}"
       register: subsoil_source
 
@@ -74,7 +84,7 @@
           - "{{ subsoil_registry_host }}"
           - --auth-host
           - "{{ subsoil_auth_host }}"
-        chdir: "{{ subsoil_checkout }}"
+        chdir: "{{ subsoil_deploy_dir }}"
         creates: build/hosted/compose.env
 
     - name: Match the requested hostnames to the existing deployment
@@ -84,7 +94,7 @@
           - -Fxq
           - "{{ item.key }}={{ item.value | lower }}"
           - build/hosted/compose.env
-        chdir: "{{ subsoil_checkout }}"
+        chdir: "{{ subsoil_deploy_dir }}"
       loop:
         - key: FILES_HOST
           value: "{{ subsoil_files_host }}"
@@ -110,23 +120,23 @@
           become: false
           ansible.builtin.command:
             argv: "{{ subsoil_compose + ['config', '--quiet'] }}"
-            chdir: "{{ subsoil_checkout }}"
+            chdir: "{{ subsoil_deploy_dir }}"
           changed_when: false
 
         - name: Pull the hosted Compose images
           ansible.builtin.command:
             argv: "{{ subsoil_compose + ['pull', '--policy', 'always'] }}"
-            chdir: "{{ subsoil_checkout }}"
+            chdir: "{{ subsoil_deploy_dir }}"
 
         - name: Start the hosted Compose stack
           ansible.builtin.command:
             argv: "{{ subsoil_compose + ['up', '--no-build', '--pull', 'never', '-d'] }}"
-            chdir: "{{ subsoil_checkout }}"
+            chdir: "{{ subsoil_deploy_dir }}"
 
         - name: Find the sample seed container
           ansible.builtin.command:
             argv: "{{ subsoil_compose + ['ps', '--all', '--quiet', 'seed'] }}"
-            chdir: "{{ subsoil_checkout }}"
+            chdir: "{{ subsoil_deploy_dir }}"
           register: subsoil_seed
           changed_when: false
           failed_when: subsoil_seed.rc != 0 or subsoil_seed.stdout_lines | length != 1
@@ -149,6 +159,8 @@
       delegate_to: localhost
       become: false
       loop:
+        - url: "https://{{ subsoil_files_host }}/sign-in"
+          status: 200
         - url: "https://{{ subsoil_files_host }}/readyz"
           status: 200
         - url: "https://{{ subsoil_auth_host }}/realms/subsoil/.well-known/openid-configuration"
@@ -169,6 +181,6 @@
       delay: 5
       tags: public_check
 
-    - name: Show the Files URL and the remote credentials path
+    - name: Show the CDE URL and the remote credentials path
       ansible.builtin.debug:
-        msg: "Open https://{{ subsoil_files_host }}/explore. The generated passwords are on the VPS at {{ subsoil_checkout }}/build/hosted/accounts.txt."
+        msg: "Open https://{{ subsoil_files_host }}/. The generated passwords are on the VPS at {{ subsoil_deploy_dir }}/build/hosted/accounts.txt."

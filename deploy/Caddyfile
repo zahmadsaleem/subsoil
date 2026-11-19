@@ -1,4 +1,6 @@
 {$FILES_HOST} {
+	@legacyExplorer path /explore /explore/*
+	respond @legacyExplorer 404
 	reverse_proxy subsoil:5000
 }
 

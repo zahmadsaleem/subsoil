@@ -50,7 +50,7 @@ def main():
     realm["clients"] = [c for c in realm["clients"] if c["clientId"] != "wrong-audience"]
     for client in realm["clients"]:
         if client["clientId"] == "subsoil-browser":
-            client["redirectUris"] = [files + "/explore", files + "/sign-in/callback"]
+            client["redirectUris"] = [files + "/sign-in/callback"]
             client["webOrigins"] = [files]
         if client["clientId"] == "demo-seed":
             client["secret"] = seed_secret
