@@ -82,6 +82,15 @@ func (s *service) sourceManifest(ctx context.Context, token, repo, ref string) (
 	return fingerprint, body, nil
 }
 
+func (s *service) readRelease(ctx context.Context, token, repo, ref string) (string, releaseManifest, *apiError) {
+	fingerprint, body, failure := s.sourceManifest(ctx, token, repo, ref)
+	var manifest releaseManifest
+	if failure == nil && json.Unmarshal(body, &manifest) != nil {
+		failure = unavailable()
+	}
+	return fingerprint, manifest, failure
+}
+
 func (s *service) ready(w http.ResponseWriter, r *http.Request) {
 	res, err := s.get(r.Context(), "", "/v2/")
 	if err == nil {

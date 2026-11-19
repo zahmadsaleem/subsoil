@@ -1,0 +1,243 @@
+{{define "head"}}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>{{.Title}} · Subsoil</title>
+  <link rel="icon" href="/brand/symbol.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/cde/style.css">
+{{end}}
+
+{{define "sign-in"}}
+<!doctype html>
+<html lang="en">
+<head>{{template "head" .}}</head>
+<body class="sign-in-page">
+  <main class="sign-in-card">
+    <img class="wordmark" src="/brand/logo.svg" alt="Subsoil" width="144" height="42">
+    <h1>Sign in to Subsoil</h1>
+    <p>Open project files and versions in Riverside, or try apps in your own workspace.</p>
+    {{if .Problem}}<p class="alert" role="alert">{{.Problem}}</p>{{end}}
+    <a class="button primary" href="{{.Next}}">Sign in</a>
+  </main>
+</body>
+</html>
+{{end}}
+
+{{define "page"}}
+<!doctype html>
+<html lang="en">
+<head>
+  {{template "head" .}}
+  <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"historyRestoreAsHxRequest":false,"responseHandling":[{"code":"204","swap":false},{"code":"[23]..","swap":true},{"code":"400|403|404|502","swap":true,"error":true},{"code":"...","swap":false,"error":true}]}'>
+  <script defer src="/cde/htmx-2.0.11.min.js"></script>
+  <script defer src="/cde/actions.js"></script>
+</head>
+<body hx-history="false">
+  <a class="skip" href="#work-area">Skip to files</a>
+  <header class="topbar">
+    <a href="/"><img class="wordmark" src="/brand/logo.svg" alt="Subsoil" width="144" height="42"></a>
+    <form method="post" action="/sign-out">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      <button class="quiet" type="submit">Sign out</button>
+    </form>
+  </header>
+  <div class="layout">
+    <aside class="sidebar" aria-label="Projects and workspaces">
+      <div class="project">
+        <span class="project-symbol" aria-hidden="true">R</span>
+        <div>
+          <strong>Riverside</strong>
+          <span>Sample project</span>
+        </div>
+      </div>
+      <nav aria-label="Files and workspaces">
+        <a href="/projects/riverside/files"{{if not .Workspace}} aria-current="page"{{end}}>Project files</a>
+        {{if .WorkspaceEnabled}}<a href="/my-workspace"{{if .Workspace}} aria-current="page"{{end}}>My workspace</a>{{end}}
+      </nav>
+    </aside>
+    {{template "work-area" .}}
+  </div>
+</body>
+</html>
+{{end}}
+
+{{define "work-area"}}
+<main id="work-area" class="work-area" tabindex="-1">
+  {{if not .Workspace}}<p class="breadcrumb">Riverside <span aria-hidden="true">/</span> Files</p>{{end}}
+  <div class="page-header">
+    <h1>{{.Title}}</h1>
+    {{if .WorkspaceAppsURL}}<a class="button" href="{{.WorkspaceAppsURL}}">Workspace apps</a>{{end}}
+  </div>
+  {{if .Problem}}
+    <div class="alert" role="alert">
+      <p>{{.Problem}}</p>
+      <a href="{{.Path}}">Back to files</a>
+    </div>
+  {{else if .AppSettings}}
+    {{template "apps" .}}
+  {{else if .CanSetUp}}
+    <section class="empty">
+      <h2>Set up your workspace</h2>
+      <p>Add sample files so you can try an app with its own access.</p>
+      <form method="post" action="/my-workspace/setup">
+        <input type="hidden" name="csrf" value="{{.CSRF}}">
+        <button class="primary" type="submit">Set up my workspace</button>
+      </form>
+    </section>
+  {{else}}
+    <div class="file-layout{{if .Release}} has-selection{{end}}">
+      <section class="file-table" aria-label="Files">
+        <div class="toolbar">
+          <form action="{{.Path}}" method="get" role="search" hx-boost="true" hx-target="#work-area" hx-swap="outerHTML" hx-push-url="true">
+            <label class="visually-hidden" for="file-search">Search files</label>
+            <input id="file-search" type="search" name="q" placeholder="Search files" maxlength="120" value="{{.Query}}">
+            <button type="submit">Search</button>
+          </form>
+          {{if .Query}}<a class="quiet" href="{{.Path}}" hx-boost="true" hx-target="#work-area" hx-swap="outerHTML">Clear</a>{{end}}
+          {{if .CanAddSample}}
+          <form method="post" action="/my-workspace/sample-package">
+            <input type="hidden" name="csrf" value="{{.CSRF}}">
+            <button type="submit">Add sample work package</button>
+          </form>
+          {{end}}
+        </div>
+        {{if or .LatestPackage .Revisions}}
+          <table>
+            <thead><tr><th scope="col">Name</th><th scope="col">Latest release</th></tr></thead>
+            <tbody hx-boost="true" hx-target="#work-area" hx-swap="outerHTML">
+            {{with .LatestPackage}}
+              <tr{{if $.PackageSelected}} class="selected"{{end}}>
+                <td><a class="file-name" href="{{.URL}}">{{.Title}}</a><span class="file-type">Work package · {{.FileCount}} files</span></td>
+                <td>{{template "released-by" .}}</td>
+              </tr>
+            {{end}}
+            {{range .Revisions}}
+              <tr><td><a href="{{.URL}}"{{if .Selected}} aria-current="true"{{end}}>{{.Name}}</a></td><td></td></tr>
+            {{end}}
+            </tbody>
+          </table>
+        {{else if .Query}}
+          <p class="empty">No items match “{{.Query}}”.</p>
+        {{else}}
+          <p class="empty">No releases yet.</p>
+        {{end}}
+      </section>
+      {{if .Release}}
+      <section class="version-panel" aria-labelledby="release-title">
+        <div class="panel-header">
+          <div>
+            {{if .PackageSelected}}<p class="panel-label">Work package release</p>{{end}}
+            <h2 id="release-title">{{.Release.Title}}</h2>
+            <p class="release-meta">{{template "released-by" .Release}}</p>
+          </div>
+          <a class="close-panel" href="{{.Path}}" hx-boost="true" hx-target="#work-area" hx-swap="outerHTML" aria-label="Close release details">Close</a>
+        </div>
+        <div class="version-actions">
+          {{if .PackageActions}}
+          <details class="app-menu">
+            <summary>{{if .PackageSelected}}Open package with…{{else}}Open with…{{end}}</summary>
+            {{template "app-actions" .PackageActions}}
+          </details>
+          {{end}}
+          <button type="button" data-copy-link="{{.ShareURL}}">{{if .PackageSelected}}Copy release link{{else}}Copy version link{{end}}</button>
+          <span class="copy-status" role="status"></span>
+        </div>
+        {{if .AppsUnavailable}}<p class="app-notice" role="status">Apps couldn’t be loaded. Refresh to try again.</p>{{end}}
+        <ul class="downloads">
+          {{range .Files}}
+          <li class="release-file">
+            <div><strong>{{.Name}}</strong><span>{{if .Role}}{{.Role}} · {{end}}{{.Size}}</span></div>
+            <div class="file-actions">
+              {{if .Actions}}
+              <details class="app-menu">
+                <summary>Open with…</summary>
+                {{template "app-actions" .Actions}}
+              </details>
+              {{end}}
+              <a href="{{.URL}}" download>Download<span class="visually-hidden"> {{.Name}}</span></a>
+            </div>
+          </li>
+          {{else}}<li>This version contains no files.</li>{{end}}
+        </ul>
+        {{if and .PackageSelected .PackageHistory}}
+        <section class="history" aria-labelledby="history-title">
+          <h3 id="history-title">Release history</h3>
+          <ol hx-boost="true" hx-target="#work-area" hx-swap="outerHTML">
+            {{range .PackageHistory}}
+              <li><a href="{{.URL}}"{{if eq .URL $.Release.URL}} aria-current="true"{{end}}>{{template "released-by" .}}</a></li>
+            {{end}}
+          </ol>
+        </section>
+        {{end}}
+        <details class="technical">
+          <summary>Technical details</summary>
+          <dl><dt>Manifest digest</dt><dd><code>{{.Fingerprint}}</code></dd></dl>
+          <a href="{{.ShareURL}}">Exact release link</a>
+        </details>
+      </section>
+      {{end}}
+    </div>
+  {{end}}
+</main>
+{{end}}
+
+{{define "released-by"}}
+  {{if .Publisher}}<span>Released by {{.Publisher}}</span>{{end}}
+  {{if .Date}}<time datetime="{{.Timestamp}}">{{.Date}}</time>{{end}}
+  {{if and (not .Publisher) (not .Date)}}<span>Release details unavailable</span>{{end}}
+{{end}}
+
+{{define "app-actions"}}
+  <ul class="app-actions">
+    {{range .}}<li><a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{.Name}}</a></li>{{end}}
+  </ul>
+{{end}}
+
+{{define "apps"}}
+<div class="app-settings">
+  <section class="registration" aria-labelledby="register-heading">
+    <h2 id="register-heading">Register an app</h2>
+    {{if .AppSettings.Notice}}<p class="alert" role="alert">{{.AppSettings.Notice}}</p>{{end}}
+    <form method="post" action="/my-workspace/apps">
+      <input type="hidden" name="csrf" value="{{.CSRF}}">
+      {{with .AppSettings.Form}}
+      <label>App name <input name="name" value="{{.Name}}" required maxlength="80"></label>
+      <label>Callback URLs <textarea name="callbacks" rows="2" required>{{.Callbacks}}</textarea></label>
+      <label>Launch URL <input name="launch_url" type="url" value="{{.LaunchURL}}"></label>
+      <fieldset>
+        <legend>Package types</legend>
+        <label>View package types <input name="view_packages" value="{{.ViewPackages}}" placeholder="application/vnd.subsoil.demo.work-package.v1"></label>
+        <label>Edit package types <input name="edit_packages" value="{{.EditPackages}}"></label>
+      </fieldset>
+      <fieldset>
+        <legend>File types</legend>
+        <label>View file types <input name="view_files" value="{{.ViewFiles}}" placeholder="application/pdf, image/png"></label>
+        <label>Edit file types <input name="edit_files" value="{{.EditFiles}}"></label>
+      </fieldset>
+      {{end}}
+      <button class="primary" type="submit">Register app</button>
+    </form>
+  </section>
+  <section class="app-registrations" aria-labelledby="registered-heading">
+    <h2 id="registered-heading">Registered apps</h2>
+    <ul>
+      {{range .AppSettings.Registrations}}
+      <li>
+        <div class="app-heading">
+          <strong>{{.Name}}</strong>
+          <form method="post" action="/my-workspace/apps/{{.ID}}/remove">
+            <input type="hidden" name="csrf" value="{{$.CSRF}}">
+            <button type="submit" class="quiet" aria-label="Remove {{.Name}}">Remove</button>
+          </form>
+        </div>
+        <details{{if .Added}} open{{end}}>
+          <summary>App configuration</summary>
+          <pre>{{.Config}}</pre>
+          <div><button type="button" data-copy-link="{{.Config}}" data-copy-message="Configuration copied">Copy app configuration</button> <span class="copy-status" role="status"></span></div>
+        </details>
+      </li>
+      {{else}}<li>Apps you register in this workspace will appear here.</li>{{end}}
+    </ul>
+  </section>
+</div>
+{{end}}

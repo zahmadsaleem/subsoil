@@ -9,3 +9,9 @@ textarea { resize: vertical; width: 100%; box-sizing: border-box; font-family: u
 button { cursor: pointer; }
 button:hover { background: #eaf1e8; }
 #status { color: #4c6755; }
+#package-files { padding-left: 1.25rem; }
+#package-files li { margin: .35rem 0; }
+#preview { margin-top: .75rem; }
+#preview iframe { width: 100%; min-height: 24rem; border: 1px solid #ccd8ca; }
+#preview img { max-width: 100%; height: auto; }
+#preview pre { white-space: pre-wrap; overflow-wrap: anywhere; }

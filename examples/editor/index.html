@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
-  <title>Workspace editor</title>
+  <title>Workspace app</title>
   <link rel="stylesheet" href="editor.css">
   <script src="editor.js" defer></script>
 </head>
 <body>
   <main>
-    <h1>Workspace editor</h1>
+    <h1>Workspace app</h1>
     <p id="status" role="status">Open a file from Subsoil or paste a handoff link.</p>
     <details id="settings">
       <summary>Connect to Subsoil</summary>
@@ -25,6 +25,15 @@
       <button>Open file</button>
     </form>
     <button id="signin" hidden>Sign in to open</button>
+    <section id="package" hidden aria-labelledby="package-title">
+      <h2 id="package-title"></h2>
+      <ul id="package-files"></ul>
+      <section id="member" hidden aria-labelledby="member-title">
+        <h3 id="member-title"></h3>
+        <a id="member-download" download>Download file</a>
+        <div id="preview"></div>
+      </section>
+    </section>
     <section id="file" hidden>
       <label><span id="filename">File contents</span><textarea id="contents" rows="14" spellcheck="false"></textarea></label>
       <form id="publish" hidden>

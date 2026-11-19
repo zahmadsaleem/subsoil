@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +16,7 @@ type launchRequest struct {
 	Repository    string `json:"repository"`
 	Reference     string `json:"reference"`
 	Intent        string `json:"intent"`
+	Layer         *int   `json:"layer,omitempty"`
 }
 
 type source struct {
@@ -34,59 +36,73 @@ type appMatch struct {
 	intents []string
 }
 
-func (s *service) matchingApps(ctx context.Context, token, repo string, manifest []byte) ([]appMatch, *apiError) {
-	var source struct {
-		ArtifactType string `json:"artifactType"`
-	}
-	if json.Unmarshal(manifest, &source) != nil {
-		return nil, unavailable()
-	}
-	if source.ArtifactType == "" {
+func validIntent(intent string) bool {
+	return intent == "view" || intent == "edit"
+}
+
+func parseLayer(query url.Values) (*int, *apiError) {
+	if !query.Has("layer") {
 		return nil, nil
 	}
-	apps := s.config.Applications
-	if strings.HasPrefix(repo, "workspaces/") {
-		apps = nil
-		if s.identity == nil {
-			return nil, nil
+	index, err := strconv.Atoi(query.Get("layer"))
+	if err != nil || index < 0 || len(query["layer"]) != 1 {
+		return nil, badRequest("Choose a file from this release")
+	}
+	return &index, nil
+}
+
+func (s *service) availableApps(ctx context.Context, token, repo string) ([]application, *apiError) {
+	if !strings.HasPrefix(repo, "workspaces/") {
+		return s.config.Applications, nil
+	}
+	if s.identity == nil {
+		return nil, nil
+	}
+	owner, err := s.identity.owner(ctx, token)
+	if err == noWorkspace || (err == nil && workspaceRepository(owner) != repo) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, unavailable()
+	}
+	registrations, err := s.listWorkspaceApps(ctx, owner)
+	if err != nil {
+		return nil, unavailable()
+	}
+	var apps []application
+	for _, app := range registrations {
+		if app.LaunchURL != "" {
+			apps = append(apps, application{
+				ID: app.ID, Name: app.Name, LaunchURL: app.LaunchURL, Handles: app.Handles, FileHandles: app.FileHandles,
+			})
 		}
-		owner, err := s.identity.owner(ctx, token)
-		if err == noWorkspace || (err == nil && workspaceRepository(owner) != repo) {
-			return nil, nil
-		}
-		if err != nil {
-			return nil, unavailable()
-		}
-		admin, err := s.identity.adminToken(ctx)
-		if err != nil {
-			return nil, unavailable()
-		}
-		registrations, err := s.identity.workspaceApps(ctx, owner, admin)
-		if err != nil {
-			return nil, unavailable()
-		}
-		for _, entry := range registrations {
-			if app, ok := s.copyableApp(owner, entry); ok && app.LaunchURL != "" {
-				apps = append(apps, application{
-					ID: app.ID, Name: app.Name, LaunchURL: app.LaunchURL, Handles: app.Handles,
-				})
-			}
-		}
+	}
+	return apps, nil
+}
+
+func matchingApps(apps []application, manifest releaseManifest, layer *int) ([]appMatch, *apiError) {
+	if layer != nil && (*layer < 0 || *layer >= len(manifest.Layers)) {
+		return nil, badRequest("Choose a file from this release")
 	}
 	var matches []appMatch
 	for _, app := range apps {
 		match := appMatch{application: app}
-		for _, entry := range app.Handles {
-			if entry.ArtifactType != source.ArtifactType {
-				continue
+		if layer == nil {
+			for _, entry := range app.Handles {
+				if entry.ArtifactType == manifest.ArtifactType {
+					match.intents = append(match.intents, entry.Intents...)
+				}
 			}
-			for _, intent := range entry.Intents {
-				if !slices.Contains(match.intents, intent) {
-					match.intents = append(match.intents, intent)
+		} else {
+			for _, entry := range app.FileHandles {
+				if entry.MediaType == manifest.Layers[*layer].MediaType {
+					match.intents = append(match.intents, entry.Intents...)
 				}
 			}
 		}
 		if len(match.intents) > 0 {
+			slices.Sort(match.intents)
+			match.intents = slices.Compact(match.intents)
 			matches = append(matches, match)
 		}
 	}
@@ -99,13 +115,12 @@ func (s *service) applications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	query := r.URL.Query()
-	fingerprint, manifest, failure := s.sourceManifest(r.Context(), token, query.Get("repository"), query.Get("reference"))
+	layer, failure := parseLayer(query)
 	if failure != nil {
 		writeJSON(w, failure.status, failure)
 		return
 	}
-
-	matches, failure := s.matchingApps(r.Context(), token, query.Get("repository"), manifest)
+	fingerprint, matches, failure := s.launchMatches(r.Context(), token, query.Get("repository"), query.Get("reference"), layer)
 	if failure != nil {
 		writeJSON(w, failure.status, failure)
 		return
@@ -132,20 +147,43 @@ func (s *service) launch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req launchRequest
-	if err := decodeJSON(http.MaxBytesReader(w, r.Body, 32<<10), &req); err != nil || (req.Intent != "view" && req.Intent != "edit") {
+	if err := decodeJSON(http.MaxBytesReader(w, r.Body, 32<<10), &req); err != nil {
 		failure := badRequest("Choose a registered application, version and intent")
 		writeJSON(w, failure.status, failure)
 		return
 	}
-	fingerprint, manifest, failure := s.sourceManifest(r.Context(), token, req.Repository, req.Reference)
+	target, failure := s.launchURL(r.Context(), token, req)
 	if failure != nil {
 		writeJSON(w, failure.status, failure)
 		return
 	}
-	matches, failure := s.matchingApps(r.Context(), token, req.Repository, manifest)
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	writeJSON(w, http.StatusOK, map[string]string{"protocol": handoffProtocol, "launch_url": target})
+}
+
+func (s *service) launchMatches(ctx context.Context, token, repository, ref string, layer *int) (string, []appMatch, *apiError) {
+	fingerprint, manifest, failure := s.readRelease(ctx, token, repository, ref)
 	if failure != nil {
-		writeJSON(w, failure.status, failure)
-		return
+		return "", nil, failure
+	}
+	apps, failure := s.availableApps(ctx, token, repository)
+	if failure != nil {
+		return "", nil, failure
+	}
+	matches, failure := matchingApps(apps, manifest, layer)
+	return fingerprint, matches, failure
+}
+
+func (s *service) launchURL(ctx context.Context, token string, req launchRequest) (string, *apiError) {
+	if !validIntent(req.Intent) || req.ApplicationID == "" {
+		return "", badRequest("Choose a registered application, version and intent")
+	}
+	if req.Layer != nil && !digestPattern.MatchString(req.Reference) {
+		return "", badRequest("Choose a file from an exact release")
+	}
+	fingerprint, matches, failure := s.launchMatches(ctx, token, req.Repository, req.Reference, req.Layer)
+	if failure != nil {
+		return "", failure
 	}
 	for _, app := range matches {
 		if app.ID != req.ApplicationID || !slices.Contains(app.intents, req.Intent) {
@@ -158,10 +196,10 @@ func (s *service) launch(w http.ResponseWriter, r *http.Request) {
 			Intent:   req.Intent,
 		})
 		target.Fragment = "handoff=" + base64.RawURLEncoding.EncodeToString(data)
-		w.Header().Set("Referrer-Policy", "no-referrer")
-		writeJSON(w, http.StatusOK, map[string]string{"protocol": handoffProtocol, "launch_url": target.String()})
-		return
+		if req.Layer != nil {
+			target.RawQuery = url.Values{"layer": {strconv.Itoa(*req.Layer)}}.Encode()
+		}
+		return target.String(), nil
 	}
-	failure = badRequest("Choose an app that supports this version and action")
-	writeJSON(w, failure.status, failure)
+	return "", badRequest("Choose an app that supports this item and action")
 }

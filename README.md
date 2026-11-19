@@ -25,8 +25,10 @@ with Docker Compose.
 docker compose up --build -d
 ```
 
-Open [Subsoil Files](http://localhost:5080/explore) and confirm your signup
-using the [local inbox](http://localhost:8025).
+Open the [local CDE](http://localhost:5080/) and sign in as `reader` with
+`reader-demo-password` to browse the Riverside work-package releases. To
+register an app and try both kinds of handoff, create an account, confirm
+your signup in the [local inbox](http://localhost:8025), and open **My workspace**.
 
 - [Connect an app](docs/DEVELOPMENT.md) and publish a revision with the starter editor.
 - [Architecture](docs/ARCHITECTURE.md) explains how independent apps and CDEs exchange versions.

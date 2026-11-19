@@ -78,7 +78,8 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "redirectUris": [
-        "http://localhost:5080/explore"
+        "http://localhost:5080/explore",
+        "http://localhost:5080/sign-in/callback"
       ],
       "webOrigins": [
         "http://localhost:5080"

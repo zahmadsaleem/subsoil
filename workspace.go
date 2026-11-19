@@ -22,11 +22,17 @@ type capability struct {
 	Intents      []string `json:"intents"`
 }
 
+type fileCapability struct {
+	MediaType string   `json:"media_type"`
+	Intents   []string `json:"intents"`
+}
+
 type appRegistration struct {
-	Name         string       `json:"name"`
-	RedirectURIs []string     `json:"redirect_uris"`
-	LaunchURL    string       `json:"launch_url,omitempty"`
-	Handles      []capability `json:"handles"`
+	Name         string           `json:"name"`
+	RedirectURIs []string         `json:"redirect_uris"`
+	LaunchURL    string           `json:"launch_url,omitempty"`
+	Handles      []capability     `json:"handles"`
+	FileHandles  []fileCapability `json:"file_handles,omitempty"`
 }
 
 type registeredApp struct {
@@ -64,7 +70,7 @@ func (a appRegistration) validate() error {
 	if a.LaunchURL != "" && !localAppURL(a.LaunchURL) {
 		return errors.New("Use an Open with address on " + developerOrigin)
 	}
-	return validateHandles(a.Handles)
+	return validateHandles(a.Handles, a.FileHandles)
 }
 
 func localAppURL(address string) bool {
@@ -73,23 +79,35 @@ func localAppURL(address string) bool {
 		strings.HasPrefix(u.Path, "/") && !strings.ContainsAny(u.Path, "*\\")
 }
 
-func validateHandles(handles []capability) error {
-	if len(handles) == 0 || len(handles) > 12 {
-		return errors.New("Choose between one and twelve artifact types")
+func validateHandles(handles []capability, files []fileCapability) error {
+	if count := len(handles) + len(files); count == 0 || count > 12 {
+		return errors.New("Choose between one and twelve package or file types")
 	}
 	for _, handle := range handles {
-		mediaType, params, err := mime.ParseMediaType(handle.ArtifactType)
-		if err != nil || len(params) != 0 || mediaType != handle.ArtifactType ||
-			strings.Count(mediaType, "/") != 1 || strings.Contains(mediaType, "*") || len(mediaType) > 128 {
-			return errors.New("Enter an exact artifact media type")
+		if err := validateCapability(handle.ArtifactType, handle.Intents); err != nil {
+			return err
 		}
-		if len(handle.Intents) == 0 || len(handle.Intents) > 2 {
+	}
+	for _, handle := range files {
+		if err := validateCapability(handle.MediaType, handle.Intents); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateCapability(value string, intents []string) error {
+	mediaType, params, err := mime.ParseMediaType(value)
+	if err != nil || len(params) != 0 || mediaType != value ||
+		strings.Count(mediaType, "/") != 1 || strings.Contains(mediaType, "*") || len(mediaType) > 128 {
+		return errors.New("Enter an exact media type such as application/pdf")
+	}
+	if len(intents) == 0 || len(intents) > 2 {
+		return errors.New("Choose View, Edit, or both")
+	}
+	for _, intent := range intents {
+		if !validIntent(intent) {
 			return errors.New("Choose View, Edit, or both")
-		}
-		for _, intent := range handle.Intents {
-			if intent != "view" && intent != "edit" {
-				return errors.New("Choose View, Edit, or both")
-			}
 		}
 	}
 	return nil
@@ -132,48 +150,72 @@ func (s *service) registeredApps(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, badRequest("Enter valid app details"))
 			return
 		}
-		app.Name = strings.TrimSpace(app.Name)
-		if err := app.validate(); err != nil {
-			writeJSON(w, http.StatusBadRequest, badRequest(err.Error()))
+		registered, failure := s.createWorkspaceApp(r.Context(), owner, app)
+		if failure != nil {
+			writeJSON(w, failure.status, failure)
 			return
 		}
-		s.createWorkspaceApp(w, r, owner, app)
+		writeJSON(w, http.StatusCreated, registered)
 		return
 	}
 
-	admin, err := s.identity.adminToken(r.Context())
+	if r.Method == http.MethodDelete {
+		if failure := s.removeWorkspaceApp(r.Context(), owner, r.PathValue("app")); failure != nil {
+			if failure.status == http.StatusNotFound {
+				http.NotFound(w, r)
+			} else {
+				writeJSON(w, failure.status, failure)
+			}
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	apps, err := s.listWorkspaceApps(r.Context(), owner)
 	if err != nil {
 		s.workspaceError(w, err)
 		return
 	}
-	clients, err := s.identity.workspaceApps(r.Context(), owner, admin)
+	writeJSON(w, http.StatusOK, apps)
+}
+
+func (s *service) listWorkspaceApps(ctx context.Context, owner string) ([]registeredApp, error) {
+	admin, err := s.identity.adminToken(ctx)
 	if err != nil {
-		s.workspaceError(w, err)
-		return
+		return nil, err
+	}
+	clients, err := s.identity.workspaceApps(ctx, owner, admin)
+	if err != nil {
+		return nil, err
 	}
 	apps := []registeredApp{}
 	for _, entry := range clients {
-		if r.Method == http.MethodDelete {
-			if entry.ClientID != r.PathValue("app") {
-				continue
-			}
-			if err := s.identity.adminRequest(r.Context(), admin, http.MethodDelete, "/clients/"+url.PathEscape(entry.ID), nil, nil); err != nil {
-				s.workspaceError(w, err)
-				return
-			}
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
 		if app, ok := s.copyableApp(owner, entry); ok {
 			apps = append(apps, app)
 		}
 	}
-	if r.Method == http.MethodDelete {
-		http.NotFound(w, r)
-		return
-	}
 	slices.SortFunc(apps, func(a, b registeredApp) int { return strings.Compare(a.ID, b.ID) })
-	writeJSON(w, http.StatusOK, apps)
+	return apps, nil
+}
+
+func (s *service) removeWorkspaceApp(ctx context.Context, owner, appID string) *apiError {
+	admin, err := s.identity.adminToken(ctx)
+	if err != nil {
+		return workspaceFailure(err)
+	}
+	clients, err := s.identity.workspaceApps(ctx, owner, admin)
+	if err != nil {
+		return workspaceFailure(err)
+	}
+	for _, entry := range clients {
+		if entry.ClientID == appID {
+			if err := s.identity.adminRequest(ctx, admin, http.MethodDelete, "/clients/"+url.PathEscape(entry.ID), nil, nil); err != nil {
+				return workspaceFailure(err)
+			}
+			return nil
+		}
+	}
+	return &apiError{http.StatusNotFound, "APP_NOT_FOUND", "This app is no longer registered"}
 }
 
 func (s *service) copyableApp(owner string, entry keycloakApp) (registeredApp, bool) {
@@ -210,48 +252,49 @@ func (i *identity) appScopes(ctx context.Context, admin, repository string) ([]s
 	return scopes, nil
 }
 
-func (s *service) createWorkspaceApp(w http.ResponseWriter, r *http.Request, owner string, registration appRegistration) {
+func (s *service) createWorkspaceApp(ctx context.Context, owner string, registration appRegistration) (registeredApp, *apiError) {
+	registration.Name = strings.TrimSpace(registration.Name)
+	if err := registration.validate(); err != nil {
+		return registeredApp{}, badRequest(err.Error())
+	}
+	if registration.Handles == nil {
+		registration.Handles = []capability{}
+	}
 	i := s.identity
 	i.create.Lock()
 	defer i.create.Unlock()
-	admin, err := i.adminToken(r.Context())
+	admin, err := i.adminToken(ctx)
 	if err != nil {
-		s.workspaceError(w, err)
-		return
+		return registeredApp{}, workspaceFailure(err)
 	}
-	apps, err := i.workspaceApps(r.Context(), owner, admin)
+	apps, err := i.workspaceApps(ctx, owner, admin)
 	if err != nil {
-		s.workspaceError(w, err)
-		return
+		return registeredApp{}, workspaceFailure(err)
 	}
 	nameDigest := sha256.Sum256([]byte(strings.ToLower(registration.Name)))
 	clientID := fmt.Sprintf("subsoil-ws-%s-%x", owner, nameDigest[:8])
 	for _, entry := range apps {
 		if entry.ClientID == clientID {
-			writeJSON(w, http.StatusConflict, badRequest("An app with this name is already registered"))
-			return
+			return registeredApp{}, &apiError{http.StatusConflict, "INVALID_REQUEST", "An app with this name is already registered"}
 		}
 	}
 	if len(apps) >= workspaceAppLimit {
-		writeJSON(w, http.StatusConflict, badRequest("Remove an app before registering another"))
-		return
+		return registeredApp{}, &apiError{http.StatusConflict, "INVALID_REQUEST", "Remove an app before registering another"}
 	}
 	metadata, err := json.Marshal(registration)
 	if err != nil || len(metadata) > 3500 {
-		writeJSON(w, http.StatusBadRequest, badRequest("Shorten the app registration details"))
-		return
+		return registeredApp{}, badRequest("Shorten the app registration details")
 	}
 	repository := workspaceRepository(owner)
-	scopes, err := i.appScopes(r.Context(), admin, repository)
+	scopes, err := i.appScopes(ctx, admin, repository)
 	if err != nil {
-		s.workspaceError(w, err)
-		return
+		return registeredApp{}, workspaceFailure(err)
 	}
 	app := keycloakApp{ClientID: clientID, Enabled: true, Attributes: map[string]string{
 		"subsoil.workspace": owner, "subsoil.app": string(metadata),
 		"pkce.code.challenge.method": "S256",
 	}}
-	err = i.adminRequest(r.Context(), admin, http.MethodPost, "/clients", map[string]any{
+	err = i.adminRequest(ctx, admin, http.MethodPost, "/clients", map[string]any{
 		"clientId": app.ClientID, "name": registration.Name, "protocol": "openid-connect",
 		"enabled": true, "publicClient": true, "standardFlowEnabled": true, "consentRequired": true,
 		"directAccessGrantsEnabled": false, "implicitFlowEnabled": false, "serviceAccountsEnabled": false,
@@ -270,15 +313,13 @@ func (s *service) createWorkspaceApp(w http.ResponseWriter, r *http.Request, own
 		},
 	}, nil)
 	if errors.Is(err, errIdentityConflict) {
-		writeJSON(w, http.StatusConflict, badRequest("An app with this name is already registered"))
-		return
+		return registeredApp{}, &apiError{http.StatusConflict, "INVALID_REQUEST", "An app with this name is already registered"}
 	}
 	if err != nil {
-		s.workspaceError(w, err)
-		return
+		return registeredApp{}, workspaceFailure(err)
 	}
 	copyable, _ := s.copyableApp(owner, app)
-	writeJSON(w, http.StatusCreated, copyable)
+	return copyable, nil
 }
 
 func (s *service) workspace(w http.ResponseWriter, r *http.Request) {
@@ -308,7 +349,12 @@ func (s *service) workspace(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *service) workspaceError(w http.ResponseWriter, err error) {
+	failure := workspaceFailure(err)
+	writeJSON(w, failure.status, failure)
+}
+
+func workspaceFailure(err error) *apiError {
 	// Log the upstream status and operation without returning credentials or tokens.
 	log.Printf("workspace operation failed: %v", err)
-	writeJSON(w, http.StatusBadGateway, &apiError{http.StatusBadGateway, "WORKSPACE_UNAVAILABLE", "Couldn’t load your workspace. Please try again."})
+	return &apiError{http.StatusBadGateway, "WORKSPACE_UNAVAILABLE", "Couldn’t load your workspace. Please try again."}
 }

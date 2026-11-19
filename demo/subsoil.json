@@ -8,5 +8,9 @@
     "repository:project/model:pull",
     "repository:reviews/model:pull"
   ],
-  "applications": []
+  "applications": [],
+  "cde": {
+    "origin": "http://localhost:5080",
+    "issuer_upstream": "http://keycloak:8080/realms/subsoil"
+  }
 }

@@ -44,12 +44,13 @@ def main():
     demo = ROOT / "demo"
     subsoil = json.loads((demo / "subsoil.json").read_text())
     subsoil.update(registry=registry, authorization_server=issuer)
+    subsoil["cde"]["origin"] = files
     realm = json.loads((demo / "keycloak" / "realm.json").read_text())
     realm["sslRequired"] = "all"
     realm["clients"] = [c for c in realm["clients"] if c["clientId"] != "wrong-audience"]
     for client in realm["clients"]:
         if client["clientId"] == "subsoil-browser":
-            client["redirectUris"] = [files + "/explore"]
+            client["redirectUris"] = [files + "/explore", files + "/sign-in/callback"]
             client["webOrigins"] = [files]
         if client["clientId"] == "demo-seed":
             client["secret"] = seed_secret

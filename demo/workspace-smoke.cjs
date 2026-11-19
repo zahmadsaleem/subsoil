@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const { createHash, randomBytes, randomUUID } = require('node:crypto');
+const { readFile } = require('node:fs/promises');
 const { chromium } = require('playwright');
 
 const files = 'http://localhost:5080';
@@ -11,6 +12,7 @@ const editor = 'http://localhost:5173/';
 const password = 'Demo-pass-238!example';
 const notes = 'application/vnd.subsoil.demo.notes.v1';
 const review = 'application/vnd.subsoil.demo.review.v1+json';
+const workPackage = 'application/vnd.subsoil.demo.work-package.v1';
 
 async function verifyEmail(page, email) {
   for (let tries = 0; tries < 30; tries++) {
@@ -162,6 +164,180 @@ async function authorize(account, app, callback, scope, expectedStatus = 200) {
   }
 }
 
+async function checkProjectFiles(browser, account) {
+  const context = await browser.newContext({
+    permissions: ['clipboard-read', 'clipboard-write'],
+    viewport: { width: 390, height: 844 },
+  });
+  try {
+    const page = await context.newPage();
+    const browserTokenRequests = [];
+    page.on('request', request => {
+      if (request.url() === issuer + '/protocol/openid-connect/token') browserTokenRequests.push(request);
+    });
+    await page.goto(files + '/');
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await page.locator('#username').fill('reader');
+    await page.locator('#password').fill('reader-demo-password');
+    await page.locator('#kc-login').click();
+    await page.getByRole('heading', { name: 'Project files' }).waitFor();
+    assert.equal(browserTokenRequests.length, 0, 'Go exchanges the CDE authorization code');
+    const session = (await context.cookies(files)).find(cookie => cookie.name === 'subsoil_cde');
+    assert(session?.httpOnly, 'CDE session cookie is HTTP-only');
+    assert.equal((await context.request.post(files + '/sign-out', { form: { csrf: 'invalid' } })).status(), 403);
+
+    const [fragment] = await Promise.all([
+      page.waitForResponse(response => response.url().includes('version=sha256')),
+      page.getByRole('link', { name: 'Level 02 coordination', exact: true }).click(),
+    ]);
+    assert.equal(fragment.request().headers()['hx-request'], 'true');
+    const panel = page.getByRole('region', { name: 'Level 02 coordination' });
+    const header = panel.locator('.panel-header');
+    await header.getByText('Released by Sam Lee').waitFor();
+    assert.equal(await panel.locator('.release-file').count(), 5);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    await page.getByRole('link', { name: /Released by Priya Shah/ }).click();
+    await header.getByText('Released by Priya Shah').waitFor();
+    await page.goBack();
+    await header.getByText('Released by Sam Lee').waitFor();
+    await page.goForward();
+    await header.getByText('Released by Priya Shah').waitFor();
+    await page.reload();
+    await header.getByText('Released by Priya Shah').waitFor();
+
+    await page.getByRole('button', { name: 'Copy release link' }).click();
+    await page.getByRole('status').getByText('Link copied').waitFor();
+    const link = await page.evaluate(() => navigator.clipboard.readText());
+    assert.match(new URL(link).searchParams.get('version'), /^sha256:[a-f0-9]{64}$/);
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('link', { name: 'Download level-02-plan.pdf' }).click(),
+    ]);
+    assert.equal(download.suggestedFilename(), 'level-02-plan.pdf');
+    assert.deepEqual(await readFile(await download.path()), await readFile('demo/work-package/plan.pdf'));
+
+    await page.getByRole('button', { name: 'Sign out' }).click();
+    await page.getByRole('heading', { name: 'Sign in to Subsoil' }).waitFor();
+    await page.goto(link);
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await header.getByText('Released by Priya Shah').waitFor();
+    assert.equal(page.url(), link);
+  } finally {
+    await context.close();
+  }
+
+  const page = await account.context.newPage();
+  try {
+    await page.goto(files + '/');
+    await page.getByRole('link', { name: 'Sign in', exact: true }).click();
+    await page.getByRole('alert').getByText('Ask your project administrator for access.', { exact: false }).waitFor();
+    await page.getByRole('link', { name: 'My workspace' }).click();
+    await page.getByRole('link', { name: 'notes-v2', exact: true }).waitFor();
+    console.log('The Go CDE restored an exact work-package release after sign-in, browsed its history with HTMX, and enforced project access.');
+    await checkPackageApps(page, account);
+  } finally {
+    await page.close();
+  }
+}
+
+async function checkPackageApps(page, account) {
+  await page.getByRole('button', { name: 'Add sample work package' }).click();
+  await page.getByRole('link', { name: 'Level 02 coordination', exact: true }).waitFor();
+  await page.getByRole('link', { name: 'Workspace apps' }).click();
+  await page.getByLabel('App name').fill('Package viewer');
+  const callback = editor + 'index.html';
+  await page.getByLabel('Callback URLs').fill(callback);
+  await page.getByLabel('Launch URL').fill(callback);
+  await page.getByLabel('View package types').fill(workPackage);
+  await page.getByLabel('View file types').fill('application/pdf');
+  await page.getByRole('button', { name: 'Register app' }).click();
+  const configText = await page.locator('.app-registrations pre:visible').textContent();
+  const config = JSON.parse(configText);
+  assert.deepEqual(config.handles, [{ artifact_type: workPackage, intents: ['view'] }]);
+  assert.deepEqual(config.file_handles, [{ media_type: 'application/pdf', intents: ['view'] }]);
+  const pdfOnly = await http(files, '/workspaces/' + account.id + '/apps', account.token, 'POST',
+    JSON.stringify({
+      name: 'PDF reader', redirect_uris: [editor], launch_url: editor,
+      file_handles: [{ media_type: 'application/pdf', intents: ['view'] }],
+    }), { 'Content-Type': 'application/json' });
+  assert.equal(pdfOnly.status, 201, await pdfOnly.clone().text());
+  assert.deepEqual((await pdfOnly.json()).handles, []);
+
+  await page.getByRole('link', { name: 'My workspace' }).click();
+  await page.getByRole('link', { name: 'Level 02 coordination', exact: true }).click();
+  const panel = page.getByRole('region', { name: 'Level 02 coordination' });
+  await panel.getByText('Open package with…', { exact: true }).click();
+  const whole = panel.locator('.version-actions').getByRole('link', { name: 'Open with Package viewer' });
+  assert.equal(await panel.locator('.version-actions').getByRole('link', { name: 'Open with PDF reader' }).count(), 0);
+  const selectedRow = panel.locator('.release-file').filter({ hasText: 'coordination-checklist.pdf' });
+  await selectedRow.getByText('Open with…', { exact: true }).click();
+  await selectedRow.getByRole('link', { name: 'Open with PDF reader' }).waitFor();
+  const file = selectedRow.getByRole('link', { name: 'Open with Package viewer' });
+
+  async function inspectLaunch(link) {
+    const response = await page.request.get(new URL(await link.getAttribute('href'), files).href, { maxRedirects: 0 });
+    assert.equal(response.status(), 303);
+    const address = new URL(response.headers().location);
+    const fragment = new URLSearchParams(address.hash.slice(1)).get('handoff');
+    return { address, payload: JSON.parse(Buffer.from(fragment, 'base64url')) };
+  }
+
+  const packageLaunch = await inspectLaunch(whole);
+  const fileLaunch = await inspectLaunch(file);
+  assert.equal(packageLaunch.address.search, '');
+  assert.equal(fileLaunch.address.searchParams.get('layer'), '2');
+  assert.deepEqual(fileLaunch.payload, packageLaunch.payload, 'both launches use the same oci-handoff/1 message');
+  assert.deepEqual(Object.keys(fileLaunch.payload).sort(), ['intent', 'protocol', 'source']);
+  assert.equal(fileLaunch.payload.protocol, 'oci-handoff/1');
+  assert.equal(fileLaunch.payload.source.repository, account.repository);
+  const wrongFile = new URL(await file.getAttribute('href'), files);
+  wrongFile.searchParams.set('layer', '0');
+  assert.equal((await page.request.get(wrongFile.href, { maxRedirects: 0 })).status(), 400);
+
+  async function openViewer(link) {
+    const [viewer] = await Promise.all([page.context().waitForEvent('page'), link.click()]);
+    const pulls = [];
+    viewer.on('request', request => {
+      const url = new URL(request.url());
+      if (url.origin === registry && url.pathname.startsWith('/v2/' + account.repository + '/')) {
+        pulls.push(url.pathname);
+      }
+    });
+    const connect = viewer.locator('#settings');
+    await connect.waitFor();
+    if ((await connect.getAttribute('open')) === null) {
+      await connect.locator('summary').click();
+    }
+    await viewer.getByLabel('App configuration').fill(configText);
+    await viewer.getByRole('button', { name: 'Connect', exact: true }).click();
+    await viewer.getByRole('button', { name: 'Sign in to open' }).click();
+    const consent = viewer.locator('#kc-oauth #kc-login');
+    await Promise.race([
+      consent.waitFor({ timeout: 6000 }).catch(() => {}),
+      viewer.getByRole('heading', { name: 'Level 02 coordination' }).waitFor({ timeout: 6000 }).catch(() => {}),
+    ]);
+    if (await consent.isVisible()) await consent.click();
+    await viewer.getByRole('heading', { name: 'Level 02 coordination' }).waitFor();
+    return { viewer, pulls };
+  }
+
+  const wholeApp = await openViewer(whole);
+  assert.equal(await wholeApp.viewer.locator('#package-files button').count(), 5);
+  assert(wholeApp.pulls.some(path => path.endsWith('/manifests/' + packageLaunch.payload.source.digest)));
+  await wholeApp.viewer.close();
+
+  const fileApp = await openViewer(file);
+  await fileApp.viewer.getByRole('heading', { name: 'coordination-checklist.pdf' }).waitFor();
+  assert.equal(await fileApp.viewer.locator('#package-files button').count(), 2);
+  const manifestResponse = await http(registry, '/v2/' + account.repository + '/manifests/' + fileLaunch.payload.source.digest, account.token);
+  const manifest = await manifestResponse.json();
+  assert.deepEqual(fileApp.pulls.filter(path => path.includes('/blobs/')), [
+    '/v2/' + account.repository + '/blobs/' + manifest.layers[2].digest,
+  ]);
+  await fileApp.viewer.close();
+  console.log('One app registered both capabilities, read the complete manifest, and fetched exactly the selected PDF in a file launch.');
+}
+
 async function main() {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -267,6 +443,7 @@ async function main() {
     assert.equal((await http(registry, bobBase + '/manifests/cli-v2', token, 'PUT', bobManifest,
       { 'Content-Type': 'application/vnd.oci.image.manifest.v1+json' })).status, 201);
     console.log('Workspace boundaries held at the registry for both browser and OCI-native tokens.');
+    await checkProjectFiles(browser, alice);
   } finally {
     await browser.close();
   }

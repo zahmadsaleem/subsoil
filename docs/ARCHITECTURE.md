@@ -34,13 +34,13 @@ flowchart LR
 | Authorization service | Authenticates people and issues scoped tokens according to the owner's policy. |
 | Application | Interprets the file, performs the work, and publishes the result to the user's chosen destination. |
 
-A **file version** is the OCI package described by a manifest and its files.
-The **version name**, called a tag in the registry API, is what people browse
-and choose. The manifest **digest** identifies the exact version even if a
-tag moves. A **folder** corresponds to an OCI repository, the address and
-access boundary for a collection of versions. An **artifact type** tells an
-app how to interpret a package. For example, an artifact type can tell the
-app to expect a single model in IFC format.
+A **release** is the exact collection of files described by one OCI manifest.
+A single file can have releases, and a work package can release several
+files together. The manifest **digest** identifies the exact release even if
+a tag moves. A **folder** corresponds to an OCI repository, the address and
+access boundary for a collection of versions. An **artifact type** identifies
+the package format. The layer **media type** identifies the format of an
+individual file.
 
 ## Open with and publish
 
@@ -78,6 +78,10 @@ Use an OCI image manifest with a top-level `artifactType` identifying the
 package format. Document the files, formats, and relationships each type
 expects so different apps can interpret it. For a single-file package, put
 the file in one layer with its own media type and use the OCI empty config.
+For a work package, put each file in its own layer. For example, Riverside's
+coordination package includes an IFC, two PDFs, notes, and an image. Each
+layer carries its file name and role. A new drawing changes the release
+manifest and can reuse the other files' blobs.
 Apps download the manifest and file blobs by digest and verify the received
 bytes against the manifest digest and the blob descriptors. Live queries and
 approved changes to a source system use the APIs supported by that system.
@@ -86,12 +90,13 @@ approved changes to a source system use the APIs supported by that system.
 
 ### App registration
 
-The CDE registers the app's display name, launch URL, and supported
-`artifactType` values with a `view` or `edit` intent for each. For example, an
-app can edit one type of model and view two types of report. The CDE compares
-the registration to the manifest's exact `artifactType` and offers the
-matching actions. The app's OAuth client registration specifies the exact
-callback URLs. CDEs can choose how to collect and store app registrations.
+The CDE registers the app's display name, launch URL, and the types it can
+open with a `view` or `edit` intent for each. The `handles` list declares
+package types by exact manifest `artifactType`. The `file_handles` list
+declares file types by exact layer `mediaType`. A registration can use
+either list or both. Declaring a file type means the app can start at a
+selected layer in the pinned manifest. The app's OAuth client registration
+specifies the exact callback URLs.
 
 ### Browser handoff
 
@@ -123,6 +128,15 @@ The app treats the fragment as untrusted input. It validates the protocol,
 source, and intent against a configured connection before making requests,
 then clears the fragment. The CDE keeps its own credentials. The app obtains
 access independently.
+
+For an app registered to open an individual file, Subsoil adds `?layer=N`
+to the launch URL before the handoff fragment. `N` is the zero-based position
+in the pinned manifest's `layers` array. An app preserves that selection
+through sign-in, fetches the manifest, and checks that the selected layer
+exists and matches its declared file type and intent before fetching it by
+digest. The `oci-handoff/1` fragment has the same fields for package and file
+launches. The app can read the rest of the manifest for context and requests
+registry access at repository scope.
 
 ### Access and publication
 

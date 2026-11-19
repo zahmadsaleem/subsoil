@@ -132,6 +132,13 @@ def configure():
         })
 
     browser_path = "/clients/" + client("subsoil-browser")["id"]
+    if os.getenv("LOCAL_DEMO") == "true":
+        browser = admin(browser_path)
+        callback = "http://localhost:5080/sign-in/callback"
+        if callback not in browser["redirectUris"]:
+            browser["redirectUris"].append(callback)
+            admin(browser_path, "PUT", browser)
+
     scopes = {scope["name"]: scope for scope in admin("/client-scopes")}
     for name, label in (
         ("workspace:read", "Read files in your demo workspace"),

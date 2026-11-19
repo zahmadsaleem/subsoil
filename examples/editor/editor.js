@@ -4,6 +4,7 @@ const configKey = 'subsoil.starter.config:' + location.pathname;
 const pendingKey = 'subsoil.starter.login:' + location.pathname;
 const manifestType = 'application/vnd.oci.image.manifest.v1+json';
 const maxFileSize = 4 * 1024 * 1024;
+const packageType = 'application/vnd.subsoil.demo.work-package.v1';
 const types = new Map([
   ['application/vnd.subsoil.demo.notes.v1', new Set(['view', 'edit'])],
   ['application/vnd.subsoil.demo.checklist.v1+json', new Set(['view', 'edit'])],
@@ -11,7 +12,7 @@ const types = new Map([
 ]);
 const $ = id => document.getElementById(id);
 const encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', { fatal: true });
-let config, handoff, metadata, session, opened;
+let config, handoff, metadata, session, opened, layer, previewURL;
 
 function safeAddress(value) {
   const address = new URL(value);
@@ -49,6 +50,15 @@ function readHandoff(hash) {
   if (data.protocol !== 'oci-handoff/1' || !['view', 'edit'].includes(data.intent) ||
       !/^sha256:[a-f0-9]{64}$/.test(data.source?.digest)) throw Error('The file link is invalid.');
   return data;
+}
+
+function readLaunch(parameters, hash) {
+  const values = parameters.getAll('layer');
+  if (values.length > 1 || (values.length === 1 && !/^(0|[1-9][0-9]{0,8})$/.test(values[0]))) {
+    throw Error('The file selection is invalid. Open the file again from Subsoil.');
+  }
+  handoff = readHandoff(hash);
+  layer = values.length ? Number(values[0]) : undefined;
 }
 
 function validateHandoff(data) {
@@ -91,7 +101,7 @@ async function signIn() {
   await discover();
   const state = random(), verifier = random();
   const challenge = base64(new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(verifier))));
-  sessionStorage.setItem(pendingKey, JSON.stringify({ state, verifier, handoff, issuer: config.issuer, client: config.client_id, started: Date.now() }));
+  sessionStorage.setItem(pendingKey, JSON.stringify({ state, verifier, handoff, layer, issuer: config.issuer, client: config.client_id, started: Date.now() }));
   const endpoint = new URL(metadata.authorization_endpoint);
   endpoint.search = new URLSearchParams({
     response_type: 'code', client_id: config.client_id, redirect_uri: config.redirect_uri, resource: config.registry,
@@ -126,6 +136,10 @@ async function openFile() {
   const manifest = JSON.parse(decoder.decode(await checked(await registry(base + '/manifests/' + pointer), pointer)));
   const type = manifest.artifactType;
   const capability = config.handles.some(handle => handle.artifact_type === type && handle.intents.includes(handoff.intent));
+  if (layer !== undefined || (type === packageType && capability)) {
+    await openPackage(base, manifest, layer);
+    return;
+  }
   const file = manifest.layers?.[0];
   if (!capability || !types.get(type)?.has(handoff.intent) || manifest.layers?.length !== 1 ||
       !/^sha256:[a-f0-9]{64}$/.test(file?.digest) || file.size > maxFileSize ||
@@ -139,6 +153,71 @@ async function openFile() {
   $('signin').hidden = true;
   opened = { manifest, file, editable };
   $('status').textContent = 'File opened.';
+}
+
+function memberName(file) {
+  return (file.annotations?.['org.opencontainers.image.title'] || 'File').split(/[\\/]/).pop();
+}
+
+async function viewMember(base, file) {
+  if (!/^sha256:[a-f0-9]{64}$/.test(file?.digest) ||
+      !Number.isSafeInteger(file.size) || file.size < 0 || file.size > maxFileSize) {
+    throw Error('This file is unavailable or exceeds the workspace app’s size limit.');
+  }
+  const data = await checked(await registry(base + '/blobs/' + file.digest), file.digest);
+  if (data.byteLength !== file.size) throw Error('The downloaded file has an unexpected size.');
+  if (previewURL) URL.revokeObjectURL(previewURL);
+  const renderable = ['application/pdf', 'image/png', 'image/jpeg'].includes(file.mediaType);
+  previewURL = URL.createObjectURL(new Blob([data], { type: renderable ? file.mediaType : 'application/octet-stream' }));
+  const name = memberName(file);
+  $('member-title').textContent = name;
+  $('member-download').href = previewURL;
+  $('member-download').download = name;
+  $('preview').replaceChildren();
+  if (file.mediaType === 'application/pdf') {
+    const frame = document.createElement('iframe');
+    frame.title = name;
+    frame.src = previewURL;
+    $('preview').append(frame);
+  } else if (file.mediaType === 'image/png' || file.mediaType === 'image/jpeg') {
+    const image = document.createElement('img');
+    image.alt = name;
+    image.src = previewURL;
+    $('preview').append(image);
+  } else if (file.mediaType === 'text/plain') {
+    const text = document.createElement('pre');
+    text.textContent = decoder.decode(data);
+    $('preview').append(text);
+  }
+  $('member').hidden = false;
+  $('status').textContent = 'File opened.';
+}
+
+async function openPackage(base, manifest, selected) {
+  if (handoff.intent !== 'view' || !Array.isArray(manifest.layers)) throw Error('This workspace app can view a release.');
+  const accepts = file => (config.file_handles || []).some(handle =>
+    handle.media_type === file.mediaType && handle.intents.includes(handoff.intent));
+  const file = selected === undefined ? undefined : manifest.layers[selected];
+  if (selected !== undefined && (!file || !accepts(file))) {
+    throw Error('This app cannot open the selected file type.');
+  }
+  $('file').hidden = true;
+  $('member').hidden = true;
+  $('package-title').textContent = manifest.annotations?.['org.opencontainers.image.title'] || 'Release files';
+  $('package-files').replaceChildren(...manifest.layers.flatMap(entry => {
+    if (selected !== undefined && !accepts(entry)) return [];
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = memberName(entry);
+    button.onclick = () => run(() => viewMember(base, entry));
+    item.append(button);
+    return [item];
+  }));
+  $('package').hidden = false;
+  $('signin').hidden = true;
+  $('status').textContent = 'Release opened.';
+  if (file) await viewMember(base, file);
 }
 
 async function upload(base, bytes) {
@@ -206,6 +285,7 @@ $('connect').onsubmit = event => {
     localStorage.setItem(configKey, JSON.stringify(config));
     metadata = session = opened = undefined;
     $('file').hidden = true;
+    $('package').hidden = true;
     $('settings').open = false;
     $('status').textContent = 'App connected. Open a file from Subsoil.';
     ready();
@@ -214,7 +294,8 @@ $('connect').onsubmit = event => {
 $('open').onsubmit = event => {
   event.preventDefault();
   run(async () => {
-    handoff = readHandoff(new URL(new FormData(event.currentTarget).get('link'), location.href).hash);
+    const address = new URL(new FormData(event.currentTarget).get('link'), location.href);
+    readLaunch(address.searchParams, address.hash);
     ready();
   });
 };
@@ -242,11 +323,12 @@ run(async () => {
         pending.state !== parameters.get('state') || pending.issuer !== parameters.get('iss') ||
         pending.issuer !== config.issuer || pending.client !== config.client_id) throw Error('The sign-in link expired. Reopen the file from Subsoil.');
     handoff = validateHandoff(pending.handoff);
+    layer = pending.layer;
     await exchange({ grant_type: 'authorization_code', code: parameters.get('code'), code_verifier: pending.verifier,
       redirect_uri: config.redirect_uri });
     await openFile();
   } else {
-    if (hash) handoff = readHandoff(hash);
+    if (hash) readLaunch(parameters, hash);
     ready();
   }
 });

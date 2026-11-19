@@ -20,6 +20,8 @@ on:
       - demo/*.py
       - demo/*.cjs
       - demo/*.yaml
+      - demo/model.ifc
+      - demo/work-package/**
       - demo/keycloak/**
 
 permissions:
@@ -42,7 +44,7 @@ jobs:
         run: |
           docker compose up --build -d
           docker compose --profile test run --rm smoke
-      - name: Check workspace signup and browser handoffs
+      - name: Check CDE files, workspace signup, and browser handoffs
         run: |
           npm install --prefix "$RUNNER_TEMP/subsoil-browser" --no-save playwright@1.65.1
           node "$RUNNER_TEMP/subsoil-browser/node_modules/playwright/cli.js" install --with-deps chromium
@@ -78,7 +80,7 @@ jobs:
             exit 1
           fi
           "${hosted[@]}" cp edge:/data/caddy/pki/authorities/local/root.crt "$RUNNER_TEMP/subsoil-test-ca.crt"
-          for check in 'files.subsoil.test/explore 200' 'files.subsoil.test/readyz 200' 'auth.subsoil.test/realms/subsoil/.well-known/openid-configuration 200' 'registry.subsoil.test/v2/ 401'; do
+          for check in 'files.subsoil.test/sign-in 200' 'files.subsoil.test/readyz 200' 'auth.subsoil.test/realms/subsoil/.well-known/openid-configuration 200' 'registry.subsoil.test/v2/ 401'; do
             read -r endpoint expected <<<"$check"
             host=${endpoint%%/*}
             actual=$(curl --silent --show-error --cacert "$RUNNER_TEMP/subsoil-test-ca.crt" --resolve "$host:443:127.0.0.1" --output /dev/null --write-out '%{http_code}' "https://$endpoint")

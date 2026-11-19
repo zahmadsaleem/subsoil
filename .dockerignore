@@ -8,3 +8,7 @@
 !assets/
 !assets/brand/
 !assets/brand/**
+!demo/
+!demo/model.ifc
+!demo/work-package/
+!demo/work-package/**

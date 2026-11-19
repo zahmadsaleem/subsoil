@@ -5,6 +5,8 @@ WORKDIR /build
 COPY go.mod *.go ./
 COPY web ./web
 COPY assets/brand ./assets/brand
+COPY demo/model.ifc ./demo/
+COPY demo/work-package ./demo/work-package
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/subsoil .
 
 FROM gcr.io/distroless/static-debian13:nonroot

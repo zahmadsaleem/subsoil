@@ -19,14 +19,15 @@ import (
 
 const handoffProtocol = "oci-handoff/1"
 
-//go:embed web/* assets/brand/subsoil-logo.svg assets/brand/subsoil-symbol.svg
+//go:embed web/* assets/brand/subsoil-logo.svg assets/brand/subsoil-symbol.svg demo/model.ifc demo/work-package/*
 var static embed.FS
 
 type application struct {
-	ID        string       `json:"id"`
-	Name      string       `json:"name"`
-	LaunchURL string       `json:"launch_url"`
-	Handles   []capability `json:"handles"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	LaunchURL   string           `json:"launch_url"`
+	Handles     []capability     `json:"handles"`
+	FileHandles []fileCapability `json:"file_handles,omitempty"`
 }
 
 type configuration struct {
@@ -36,6 +37,7 @@ type configuration struct {
 	ClientID            string        `json:"client_id"`
 	Scopes              []string      `json:"scopes"`
 	Applications        []application `json:"applications"`
+	CDE                 *cdeConfig    `json:"cde,omitempty"`
 }
 
 type service struct {
@@ -44,6 +46,7 @@ type service struct {
 	issuerOrigin string
 	client       *http.Client
 	identity     *identity
+	cde          *cde
 }
 
 var hostname = regexp.MustCompile(`(?i)^[a-z0-9][a-z0-9.-]*$`)
@@ -102,7 +105,7 @@ func newService(config configuration) (*service, error) {
 		if _, err := originURL(app.LaunchURL, false); err != nil {
 			return nil, fmt.Errorf("application %q: %w", app.ID, err)
 		}
-		if err := validateHandles(app.Handles); err != nil {
+		if err := validateHandles(app.Handles, app.FileHandles); err != nil {
 			return nil, fmt.Errorf("application %q: %w", app.ID, err)
 		}
 	}
@@ -124,14 +127,24 @@ func newService(config configuration) (*service, error) {
 			return nil, fmt.Errorf("load workspace registrar: %w", err)
 		}
 	}
+	if config.CDE != nil {
+		s.cde, err = newCDE(s, *config.CDE)
+		if err != nil {
+			return nil, fmt.Errorf("configure CDE: %w", err)
+		}
+	}
 	return s, nil
 }
 
 func (s *service) routes() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/explore", http.StatusSeeOther)
-	})
+	if s.cde != nil {
+		s.cde.routes(mux)
+	} else {
+		mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/explore", http.StatusSeeOther)
+		})
+	}
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -173,15 +186,19 @@ func (s *service) asset(path, contentType string) http.HandlerFunc {
 }
 
 func (s *service) browserConfig(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"registry": s.config.Registry, "handoff_protocol": handoffProtocol,
+		"authorization_server": s.config.AuthorizationServer, "client_id": s.config.ClientID,
+		"scopes": s.browserScopes(), "workspaces": s.identity != nil,
+	})
+}
+
+func (s *service) browserScopes() []string {
 	scopes := s.config.Scopes
 	if s.identity != nil {
 		scopes = append(append([]string{}, scopes...), "openid", "workspace:read", "workspace:write")
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"registry": s.config.Registry, "handoff_protocol": handoffProtocol,
-		"authorization_server": s.config.AuthorizationServer, "client_id": s.config.ClientID,
-		"scopes": scopes, "workspaces": s.identity != nil,
-	})
+	return scopes
 }
 
 type apiError struct {

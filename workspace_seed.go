@@ -34,45 +34,60 @@ type descriptor struct {
 }
 
 func (s *service) seedWorkspace(ctx context.Context, token, repo string) error {
-	base := "/v2/" + repo
 	for _, sample := range workspaceSamples {
-		manifestPath := base + "/manifests/" + sample.tag
-		code, _, err := s.workspaceRequest(ctx, token, http.MethodHead, manifestPath, "", nil)
-		if err != nil {
+		files := []sampleLayer{{sample.mediaType, []byte(sample.content), map[string]string{titleAnnotation: sample.title}}}
+		if err := s.seedWorkspaceArtifact(ctx, token, repo, sample.tag, sample.artifactType, files, nil); err != nil {
 			return err
 		}
-		if code == http.StatusOK {
-			continue
-		}
-		if code != http.StatusNotFound {
-			return fmt.Errorf("check workspace sample returned %d", code)
-		}
+	}
+	return nil
+}
 
-		config, file := []byte("{}"), []byte(sample.content)
-		for _, blob := range [][]byte{config, file} {
-			if err := s.seedBlob(ctx, token, base, blob); err != nil {
-				return err
-			}
-		}
-		manifest := struct {
-			SchemaVersion int          `json:"schemaVersion"`
-			MediaType     string       `json:"mediaType"`
-			ArtifactType  string       `json:"artifactType"`
-			Config        descriptor   `json:"config"`
-			Layers        []descriptor `json:"layers"`
-		}{2, manifestType, sample.artifactType, descriptor{emptyDescriptorType, digest(config), len(config), nil},
-			[]descriptor{{sample.mediaType, digest(file), len(file), map[string]string{"org.opencontainers.image.title": sample.title}}}}
-		payload, err := json.Marshal(manifest)
-		if err != nil {
+type sampleLayer struct {
+	MediaType   string
+	Bytes       []byte
+	Annotations map[string]string
+}
+
+func (s *service) seedWorkspaceArtifact(ctx context.Context, token, repo, tag, artifactType string, files []sampleLayer, annotations map[string]string) error {
+	base := "/v2/" + repo
+	manifestPath := base + "/manifests/" + tag
+	code, _, err := s.workspaceRequest(ctx, token, http.MethodHead, manifestPath, "", nil)
+	if err != nil || code == http.StatusOK {
+		return err
+	}
+	if code != http.StatusNotFound {
+		return fmt.Errorf("check workspace sample returned %d", code)
+	}
+	config := []byte("{}")
+	if err := s.seedBlob(ctx, token, base, config); err != nil {
+		return err
+	}
+	layers := make([]descriptor, 0, len(files))
+	for _, file := range files {
+		if err := s.seedBlob(ctx, token, base, file.Bytes); err != nil {
 			return err
 		}
-		code, _, err = s.workspaceRequest(ctx, token, http.MethodPut, manifestPath, manifestType, payload)
-		if err != nil {
-			return err
-		}
-		if code != http.StatusCreated {
-			return fmt.Errorf("publish workspace sample returned %d", code)
-		}
+		layers = append(layers, descriptor{file.MediaType, digest(file.Bytes), len(file.Bytes), file.Annotations})
+	}
+	manifest := struct {
+		SchemaVersion int               `json:"schemaVersion"`
+		MediaType     string            `json:"mediaType"`
+		ArtifactType  string            `json:"artifactType"`
+		Config        descriptor        `json:"config"`
+		Layers        []descriptor      `json:"layers"`
+		Annotations   map[string]string `json:"annotations,omitempty"`
+	}{2, manifestType, artifactType, descriptor{emptyDescriptorType, digest(config), len(config), nil}, layers, annotations}
+	payload, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+	code, _, err = s.workspaceRequest(ctx, token, http.MethodPut, manifestPath, manifestType, payload)
+	if err != nil {
+		return err
+	}
+	if code != http.StatusCreated {
+		return fmt.Errorf("publish workspace sample returned %d", code)
 	}
 	return nil
 }

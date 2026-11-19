@@ -1,0 +1,30 @@
+{
+  "title": "Level 02 coordination",
+  "artifact_type": "application/vnd.subsoil.demo.work-package.v1",
+  "releases": [
+    {
+      "tag": "work-package-01",
+      "released_by": "Priya Shah",
+      "released_at": "2026-11-18T10:25:00Z",
+      "files": [
+        {"source": "model.ifc", "name": "level-02.ifc", "media_type": "application/x-step", "role": "Coordination model"},
+        {"source": "work-package/plan.pdf", "name": "level-02-plan.pdf", "media_type": "application/pdf", "role": "Reference drawing"},
+        {"source": "work-package/coordination-checklist.pdf", "name": "coordination-checklist.pdf", "media_type": "application/pdf", "role": "Checklist"},
+        {"source": "work-package/site-notes.txt", "name": "site-notes.txt", "media_type": "text/plain", "role": "Installation notes"},
+        {"source": "work-package/coordination-view.png", "name": "coordination-view.png", "media_type": "image/png", "role": "Coordination image"}
+      ]
+    },
+    {
+      "tag": "work-package-02",
+      "released_by": "Sam Lee",
+      "released_at": "2026-11-19T14:20:00Z",
+      "files": [
+        {"source": "model.ifc", "name": "level-02.ifc", "media_type": "application/x-step", "role": "Coordination model"},
+        {"source": "work-package/plan-updated.pdf", "name": "level-02-plan.pdf", "media_type": "application/pdf", "role": "Reference drawing"},
+        {"source": "work-package/coordination-checklist.pdf", "name": "coordination-checklist.pdf", "media_type": "application/pdf", "role": "Checklist"},
+        {"source": "work-package/site-notes.txt", "name": "site-notes.txt", "media_type": "text/plain", "role": "Installation notes"},
+        {"source": "work-package/coordination-view.png", "name": "coordination-view.png", "media_type": "image/png", "role": "Coordination image"}
+      ]
+    }
+  ]
+}
