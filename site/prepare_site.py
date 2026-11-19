@@ -5,6 +5,7 @@ import argparse
 from collections import defaultdict
 from html import escape
 from html.parser import HTMLParser
+from os.path import relpath
 from pathlib import Path
 import re
 import shutil
@@ -192,11 +193,24 @@ def copy(source, destination):
     shutil.copyfile(source, destination)
 
 
+def add_site_favicon(output):
+    icon = output / "assets/subsoil-symbol.svg"
+    copy(ROOT / "assets/brand/subsoil-symbol.svg", icon)
+    for page in output.rglob("*.html"):
+        href = Path(relpath(icon, page.parent)).as_posix()
+        markup = page.read_text(encoding="utf-8")
+        head, closing_tag, body = markup.partition("</head>")
+        if not closing_tag:
+            raise ValueError(f"Missing closing head tag in {page.relative_to(output)}")
+        link = f'<link rel="icon" type="image/svg+xml" href="{href}">'
+        page.write_text(f"{head.rstrip()}\n  {link}\n{closing_tag}{body}", encoding="utf-8")
+
+
 def preserve_published_pitch_links(app_deck, output):
     for name in PUBLISHED_PITCH_RESOURCES:
         copy(app_deck / name, output / name)
 
-    for name, title in (("preview.html", "Pitch overview"), ("speaker-notes.html", "Speaker notes")):
+    for name, title in (("preview.html", "Project data exchange slides"), ("speaker-notes.html", "Speaker notes")):
         target = f"{app_deck.name}/{name}"
         (output / name).write_text(
             '<!doctype html>\n<html lang="en"><head><meta charset="utf-8">\n'
@@ -248,9 +262,10 @@ def export_site(output):
     handbook_dir.mkdir()
     (handbook_dir / "index.html").write_text(handbook, encoding="utf-8")
 
+    add_site_favicon(output)
     (output / ".nojekyll").write_text("", encoding="utf-8")
     check_local_links(output)
-    print(f"Exported the homepage, research, handbook, and both pitches to {output}.")
+    print(f"Exported the homepage, research, handbook, and both presentations to {output}.")
 
 
 if __name__ == "__main__":

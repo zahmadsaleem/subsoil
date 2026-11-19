@@ -48,12 +48,12 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
 .hero h1 { font-size: clamp(3.4rem, 6vw, 6rem); letter-spacing: -.054em; }
 .hero h1 em { display: block; color: var(--green); }
 .hero-copy > p { max-width: 33rem; margin-top: 1.45rem; color: var(--muted); font-size: clamp(1rem, 1.32vw, 1.18rem); }
+.hero-copy > p + p { margin-top: .7rem; }
 .hero-art { width: 100%; align-self: center; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 1rem 1.4rem; align-items: center; margin-top: 2rem; }
-.button, .text-link, .card-link { font-size: .94rem; font-weight: 650; }
+.button, .card-link { font-size: .94rem; font-weight: 650; }
 .button { display: inline-flex; align-items: center; gap: .7rem; background: var(--green); color: white; padding: .72rem 1.05rem; text-decoration: none; }
 .button:hover { background: #173f32; }
-.text-link:hover { color: var(--rust); }
 
 .paths { background: #eff0e5; padding-block: clamp(3rem, 7vw, 6.5rem) clamp(2.5rem, 5vw, 4rem); }
 .paths h2, .evidence h2 { font-size: clamp(2.5rem, 4.25vw, 4.15rem); letter-spacing: -.045em; }

@@ -9,10 +9,11 @@ OCI defines the packaging and delivery specifications. Tools such as ORAS and
 other compatible clients and registries can participate independently of Subsoil
 and its model profile.
 
-[Visit the Subsoil website](https://madsolame.com/subsoil/).
-[Read the pitch and speaker notes in Markdown](docs/PITCH.md).
-[Open the practical handbook](docs/handbook.html).
-[Read the research on CDEs, information flow, and AI](docs/CDE_AI_RESEARCH.md).
+- [Subsoil website](https://subsoil.dev/)
+- [Open CDE governance slides](https://subsoil.dev/open-cde-governance/)
+- [Project data exchange slides](https://subsoil.dev/project-data-exchange/) and [speaker notes in Markdown](docs/PITCH.md)
+- [OCI handbook](https://subsoil.dev/handbook/)
+- [Research on CDEs, information flow, and AI](https://subsoil.dev/research/)
 
 ## Try it
 

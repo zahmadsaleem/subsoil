@@ -178,7 +178,8 @@ def validate_bundle(root):
             assert heading == title
             assert text_content(re.search(r'<p class="lede">(.*?)</p>', section, re.S)[1]) == subtitle
             assert embedded.strip() == notes_html(copy)
-    assert "<title>Pitch</title>" in index and "<title>Notes · Pitch</title>" in notes
+    assert "<title>Project data exchange</title>" in index
+    assert "<title>Speaker notes · Project data exchange</title>" in notes
     assert 'href="speaker-notes.html"' in index and 'href="index.html"' in notes
     assert 'id="copy-prompt"' in sections[-1] and "<pre><code>" in sections[-1]
     links = set()

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="A short pitch on sharing project data between independently built apps and organizations.">
-<title>Pitch</title>
+<meta name="description" content="How to share project data between independently built apps and organizations using OCI.">
+<title>Project data exchange</title>
 <style>
 :root {
   --paper: #f5f2e9;
@@ -257,7 +257,7 @@ body.notes-open .progress { bottom: 307px; }
 </style>
 </head>
 <body>
-<main id="viewport" aria-label="Subsoil pitch">
+<main id="viewport" aria-label="Project data exchange slides">
 <div id="deck">
 <section class="slide cover active" id="slide-1" aria-labelledby="title-1" data-title="Building tools is only half the job">
   <p class="slide-index" aria-label="Slide 1">01</p>
@@ -389,7 +389,7 @@ Keep the registry and sign-in settings configurable. Show me what I would need t
 </section>
 </div>
 </main>
-<nav id="controls" aria-label="Pitch controls">
+<nav id="controls" aria-label="Slide controls">
   <div class="group"><a href="preview.html">Overview</a><span class="keys">← → navigate · N notes</span></div>
   <div class="group">
     <button id="prev" aria-label="Previous slide">←</button>
@@ -461,7 +461,7 @@ Keep the registry and sign-in settings configurable. Show me what I would need t
     element('live').textContent = `Slide ${number} of ${slides.length}. ${title}`;
     element('notes-title').textContent = title;
     element('notes-content').innerHTML = slide.querySelector('.speaker-note').innerHTML;
-    document.title = `${number}/${slides.length} · ${title} · Pitch`;
+    document.title = `${number}/${slides.length} · ${title} · Project data exchange`;
     document.querySelector('.progress').style.width = `${number / slides.length * 100}%`;
     previous.disabled = current === 0;
     next.disabled = current === slides.length - 1;

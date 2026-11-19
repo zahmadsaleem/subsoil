@@ -1,7 +1,7 @@
 {
   "presented_slides": 6,
   "audience": "AEC teams, owners, tool builders and data practitioners",
-  "presentation_copy": "A six-slide pitch about using OCI to share project data between independently built apps and organizations.",
+  "presentation_copy": "A six-slide presentation about using OCI to share project data between independently built apps and organizations.",
   "sources": [
     {
       "id": "T1",
