@@ -17,9 +17,9 @@ and its model profile.
 
 ## Try it
 
-Open the [hosted demo](https://files.lab.madsolame.com/explore), create an
-account, and find the sample files in **My workspace**. Start a local copy
-with Docker Compose.
+Open the [hosted CDE](https://cde.subsoil.dev/), create an account, and set up
+**My workspace**. Add the sample work package to try it with an app. Start a
+local copy with Docker Compose.
 
 ```sh
 docker compose up --build -d

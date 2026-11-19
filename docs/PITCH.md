@@ -70,4 +70,4 @@ Help me register the app in a Subsoil demo workspace and test it locally at http
 Keep the registry and sign-in settings configurable. Show me what I would need to connect the same app to an OCI registry my team hosts or controls.
 ```
 
-[Open the Subsoil demo](https://files.lab.madsolame.com/explore)
+[Open the Subsoil demo](https://cde.subsoil.dev/)
