@@ -1,0 +1,11 @@
+{
+  "illustrations": [
+    {
+      "file": "assets/open-cde.png",
+      "method": "built-in image_gen",
+      "transparent_background": true,
+      "prompt": "Use case: illustration-story. Make one editorial hero artwork for a warm ivory website about an open common data environment in construction. Isolated 3:2 landscape papercraft diorama, visible fully within the canvas. A small ivory and sage structural model rests on layered architectural plan sheets at the center, with a matte dark petrol archive tray on one side and an open slim laptop on the other. The laptop shows a quiet abstract view of the same structural model without text or letters. A subtly terracotta folded approval slip with a simple check mark sits beside the shared model. Build a single deceptively simple, balanced three-quarter composition, broad at the bottom, medium height with modest clear margin on all four sides. Tactile linen paper, clean cut architectural precision, subtle interior paper texture, muted woodland green, warm limestone, terracotta highlights. Crisp silhouettes, true transparent PNG alpha behind and between all objects. No colored backdrop, floor rectangle, shading beyond objects, halo, fading, feathering, outlines, enclosing solid border, signs, typography, dates, numbers, brand marks, ornamental clutter, people, or extra scenery."
+    }
+  ],
+  "research_copy": "docs/CDE_AI_RESEARCH.md"
+}
