@@ -1,18 +1,26 @@
-# Project information and the changing AEC software landscape
+# The cost of fragmented project information
 
-Architecture, engineering, and construction (AEC) organizations need project information to remain useful as applications,
-partners, and responsibilities change. Common data environments help organize
-delivery, but information still has to cross organizational boundaries. AI and
-the growing ability to build small applications make those boundaries more
-consequential: a new tool needs understandable data, appropriate access, and a
-way to return results that other people can trust.
+When project systems exchange information poorly, architecture, engineering,
+and construction (AEC) teams spend time copying records and checking which
+versions they can use. In a 2025 metro extension case study, document controllers
+manually transferred submissions and replies between common data environments
+(CDEs) and other tools. Some subcontractor exchanges took place by email. The
+researchers identified a risk of errors and rework on site when teams were
+unsure which version was current. [24]
 
-The Open Container Initiative (OCI) offers a possible shared foundation for portable published versions and
-linked results. Organizations can choose compatible applications, registries,
-and hosting without adopting a single provider's product. ORAS supplies tools
-for working with OCI artifacts; Subsoil is a usable demonstration of this
-approach. The opportunity depends on maintained integrations, agreed content
-formats, and sound information management as well as reliable transfer.
+Differences between projects add another burden. In a 2025 online survey of
+1,019 people involved in construction digitalisation in Japan, 47.2% of the
+999 who answered the information-sharing question cited differences in
+methods and tools across projects, the most frequently selected problem.
+In the same question, 21.9% cited difficulty managing change histories and
+identifying the latest version. The survey publisher provides CDE
+implementation support. [25]
+
+The costs can continue after construction. A 2004 NIST study estimated
+that inadequate interoperability cost the US capital facilities sector
+$15.8 billion in 2002. Owners and operators bore about two-thirds, mostly
+during operation and maintenance. The study covered information exchange
+and management across the asset life cycle, including paper records. [21]
 
 ## Collaboration across several environments
 
@@ -39,17 +47,11 @@ that classification with folders. Someone has to agree on the mapping and may
 have to enter the metadata again. The receiving team needs the permitted use
 and revision alongside the file. [3]
 
-NIST's 2004 capital facilities study estimated that inadequate interoperability
-cost the US industry segment $15.8 billion in 2002. Owners and operators bore
-about two-thirds of the estimated costs, mostly during operation and
-maintenance. The estimate covers information exchange and management across
-the asset life cycle, including paper records. It gives historical context for
-the cost of recreating usable information at handover. [21]
-
-For a project team, the practical questions are familiar. Which version is this?
-What was it issued for? Which inputs produced this report? Who can use it?
-Those questions offer a clearer introduction to a shared delivery architecture
-than its storage terminology.
+A design manager reported that teams kept emailing drawings to save time
+because the CDE was difficult to roll out on site. The metro extension study
+found that subcontractor exchanges by email were hard to trace when messages
+and reviews lacked a consistent archive. This can leave a file and the record
+of what the team decided in different places. [24][26]
 
 ## Data ownership across organizational boundaries
 
@@ -77,10 +79,11 @@ A common interface gives a team a way to replace one compatible system while
 keeping the way its partners send and receive information. Where an existing
 CDE requires an adapter, the adapter maps to the shared interface. The parties
 also need agreement on how to identify a release, interpret its permitted use,
-and verify who issued or accepted it. OCI can identify and transfer exact file
-versions. For a governed exchange, test whether an owner can verify the
-authorized version and its approval history from a retained copy after a system
-change or the closure of the original project account. [1][15][16][17]
+and verify who issued or accepted it. Open Container Initiative (OCI)
+standards can identify and transfer exact file versions. For a governed
+exchange, test whether an owner can verify the authorized version and its
+approval history from a retained copy after a system change or the closure
+of the original project account. [1][15][16][17]
 
 ## Dependence on software suppliers
 
@@ -276,3 +279,6 @@ and [development guide](DEVELOPMENT.md).
 21. Gallaher, M. P., O'Connor, A. C., Dettbarn, J. L., Jr., and Gilday, L. T. [Cost Analysis of Inadequate Interoperability in the U.S. Capital Facilities Industry](https://nvlpubs.nist.gov/nistpubs/gcr/2004/nist.gcr.04-867.pdf). NIST GCR 04-867, 2004. Estimates for 2002.
 22. Petri, I., Beach, T., Rana, O. F., and Rezgui, Y. [Coordinating multi-site construction projects using federated clouds](https://orca.cardiff.ac.uk/id/eprint/103921/). *Automation in Construction*, 83, 273–284, 2017.
 23. Werbrouck, J., Schulz, O., Oraskari, J., Mannens, E., Pauwels, P., and Beetz, J. [A generic framework for federated CDEs applied to Issue Management](https://research.tue.nl/en/publications/a-generic-framework-for-federated-cdes-applied-to-issue-managemen/). *Advanced Engineering Informatics*, 58, 102136, 2023.
+24. Da Silva, S., and Boton, C. [Digital Integration in Construction: A Case Study on Common Data Environment Implementation for a Metro Line Project](https://www.mdpi.com/2412-3811/10/10/266). *Infrastructures*, 10(10), 266, 2025.
+25. Applied Technology. [Survey on information sharing and data management on construction sites](https://prtimes.jp/main/html/rd/p/000000042.000105632.html). Online survey in Japan, November 2025.
+26. Ignatov, I. [Practitioner discussion of CDE use on site](https://www.linkedin.com/posts/ivaylo-ignatov_stop-designing-cdes-for-bim-managers-if-activity-7346436631236636672-r5Qr). LinkedIn post and comments, 2025.

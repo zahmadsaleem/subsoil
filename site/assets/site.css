@@ -81,7 +81,9 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
 
 .site-footer { border-top: 1px solid var(--line); padding-block: 1.2rem; color: var(--muted); font-size: .88rem; }
 .site-footer .shell { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
-.site-footer a:first-child { font-family: var(--headline); font-size: 1.2rem; font-weight: 600; text-decoration: none; }
+.footer-links { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; }
+.footer-wordmark { flex: none; }
+.footer-wordmark img { width: 6rem; height: auto; }
 
 .research-header { padding-block: clamp(3rem, 8vw, 7rem) clamp(2.5rem, 5vw, 4.25rem); }
 .research-header h1 { max-width: 15ch; font-size: clamp(3.3rem, 7.2vw, 7rem); letter-spacing: -.06em; }
@@ -164,6 +166,11 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
   .contents li { break-inside: avoid; }
   .reading-layout { gap: 1.7rem; }
   .chart li { grid-template-columns: minmax(6.5rem, 1.1fr) minmax(2rem, 1fr) 2.1rem; gap: .45rem; font-size: .79rem; }
+}
+
+@media (max-width: 440px) {
+  .masthead-inner { flex-wrap: wrap; padding-block: .65rem; }
+  .masthead nav { width: 100%; flex-wrap: wrap; justify-content: space-between; row-gap: .4rem; }
 }
 
 @media (max-width: 370px) {

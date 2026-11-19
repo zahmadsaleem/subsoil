@@ -1,0 +1,197 @@
+.philosophy-hero {
+  display: grid;
+  grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding-block: clamp(3rem, 6vw, 6rem);
+}
+
+.philosophy-label {
+  color: var(--rust);
+  font-size: .82rem;
+  font-weight: 650;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.philosophy-hero h1 {
+  max-width: 10ch;
+  margin-block: .7rem 1.4rem;
+  font-size: clamp(3.5rem, 7.45vw, 7rem);
+  line-height: .95;
+  letter-spacing: -.06em;
+  text-wrap: balance;
+}
+
+.philosophy-lead {
+  max-width: 33rem;
+  color: var(--muted);
+  font-size: clamp(1.04rem, 1.42vw, 1.21rem);
+  line-height: 1.63;
+}
+
+.philosophy-cover {
+  width: 100%;
+  border-bottom: 4px solid var(--rust);
+}
+
+.philosophy-reading {
+  grid-template-columns: minmax(11rem, .32fr) minmax(0, 1fr);
+  border-top: 1px solid var(--line);
+}
+
+.philosophy-reading .contents {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.philosophy-copy {
+  max-width: 44rem;
+  min-width: 0;
+  font-size: clamp(1.04rem, 1.37vw, 1.15rem);
+  line-height: 1.68;
+}
+
+.philosophy-copy p + p { margin-top: 1em; }
+.philosophy-copy a { color: var(--green); }
+
+.philosophy-copy > section {
+  margin-top: clamp(2.2rem, 5vw, 4.1rem);
+  padding-top: clamp(1.25rem, 2.5vw, 2rem);
+  border-top: 1px solid var(--line);
+}
+
+.philosophy-copy h2 {
+  margin-bottom: .75rem;
+  font-size: clamp(2.15rem, 4.05vw, 3.65rem);
+  letter-spacing: -.045em;
+  text-wrap: balance;
+}
+
+.version-comparison {
+  margin-top: 1.6rem;
+  padding: clamp(1rem, 2.5vw, 1.7rem);
+  background: #eeeee4;
+}
+
+.version-comparison figcaption {
+  margin-bottom: .85rem;
+  font: 500 clamp(1.4rem, 2.45vw, 2rem)/1.15 var(--headline);
+}
+
+.version-comparison dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+
+.version-comparison dl > div {
+  padding: .85rem 1rem;
+  border-top: 3px solid var(--rust);
+  background: var(--paper);
+}
+
+.version-comparison dl > div + div { border-top-color: var(--green); }
+.version-comparison dt { font-weight: 650; line-height: 1.35; }
+
+.version-comparison dt span {
+  display: block;
+  margin-bottom: .27rem;
+  color: var(--muted);
+  font-size: .77rem;
+  font-weight: 500;
+}
+
+.version-comparison dd { margin-top: .22rem; color: var(--muted); font-size: .9rem; }
+
+.philosophy-close {
+  padding-block: clamp(3rem, 6.5vw, 6rem);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.philosophy-close-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+  align-items: center;
+  gap: clamp(2rem, 5.5vw, 5rem);
+}
+
+.philosophy-close h2 { font-size: clamp(3rem, 5.2vw, 5.15rem); }
+.philosophy-close .philosophy-copy p { color: #e7ece1; }
+.soil-cutaway {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(7.3rem, 24%, 10.5rem);
+  padding-block-end: .5rem;
+  container-type: inline-size;
+}
+
+.soil-cutaway img { width: 100%; }
+.soil-cutaway figcaption { position: relative; }
+
+.soil-key > div {
+  position: absolute;
+  inset-block-start: var(--layer-center);
+  inset-inline: 0;
+  transform: translateY(-50%);
+}
+
+.soil-key > :first-child {
+  --layer-center: 22%;
+  --leader-color: #a8bda0;
+}
+
+.soil-key > :nth-child(2) {
+  --layer-center: 47.5%;
+  --leader-color: #e1a56a;
+}
+
+.soil-key > :last-child {
+  --layer-center: 80%;
+  --leader-color: #d5c8af;
+}
+
+.soil-key > div::before {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: calc(100% + .5rem);
+  inline-size: clamp(1.25rem, 7cqi, 3.4rem);
+  border-block-start: 1px dotted var(--leader-color);
+  content: "";
+}
+
+.soil-key dt {
+  font: 500 clamp(1rem, 4.2cqi, 1.9rem)/1 var(--headline);
+  letter-spacing: -.025em;
+}
+
+.soil-key > :nth-child(2) dt { font-style: italic; }
+
+.soil-key dd {
+  margin-top: .18em;
+  color: #e0e8de;
+  font-size: clamp(.69rem, 2.2cqi, .94rem);
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+@container (max-width: 19rem) {
+  .soil-key > :first-child { --layer-center: 18.5%; }
+  .soil-key > :last-child { --layer-center: 82.5%; }
+}
+
+@media (max-width: 800px) {
+  .philosophy-hero, .philosophy-close-layout { grid-template-columns: minmax(0, 1fr); }
+  .philosophy-hero { gap: 1.5rem; }
+  .philosophy-hero h1 { max-width: 15ch; font-size: clamp(3.7rem, 11vw, 6.15rem); }
+  .philosophy-cover, .soil-cutaway { max-width: 42rem; }
+}
+
+@media (max-width: 660px) {
+  .philosophy-reading { grid-template-columns: minmax(0, 1fr); }
+  .philosophy-reading .contents { display: none; }
+}
+
+@media (max-width: 400px) {
+  .version-comparison dl { grid-template-columns: minmax(0, 1fr); }
+}
