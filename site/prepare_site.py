@@ -16,6 +16,11 @@ from urllib.parse import unquote, urlsplit
 SITE = Path(__file__).resolve().parent
 ROOT = SITE.parent
 GITHUB_DOCS = "https://github.com/zahmadsaleem/subsoil/blob/main/docs/"
+PUBLISHED_DOCS = {
+    "CDE_AI_RESEARCH.md": "research",
+    "PHILOSOPHY.md": "philosophy",
+    "PROPOSAL.md": "proposal",
+}
 GOVERNANCE_FILES = (
     "index.html", "deck.css", "deck.js", "speaker-notes.html", "previews/overview.png",
     "assets/project-record.png", "assets/handoff.png", "assets/own-records.png",
@@ -53,9 +58,12 @@ def render_inline(text, cite=None):
         result.append(escape(text[offset:match.start()]))
         label, url, number, strong, emphasis = match.groups()
         if url:
+            path, separator, fragment = url.partition("#")
             if url == "../README.md":
                 url = "../index.html"
-            elif url.split("#", 1)[0] in ("DEVELOPMENT.md", "ARCHITECTURE.md"):
+            elif path in PUBLISHED_DOCS:
+                url = f"../{PUBLISHED_DOCS[path]}/index.html{separator}{fragment}"
+            elif path in ("DEVELOPMENT.md", "ARCHITECTURE.md"):
                 url = GITHUB_DOCS + url
             result.append(f'<a href="{escape(url)}">{escape(label)}</a>')
         elif number and cite:
@@ -71,19 +79,38 @@ def render_inline(text, cite=None):
     return "".join(result)
 
 
-def render_paragraphs(text, *, cite=None, css=""):
-    tag = f'<p class="{css}">' if css else "<p>"
+def render_paragraphs(text, *, cite=None):
     return "\n".join(
-        tag + render_inline(" ".join(paragraph.split()), cite) + "</p>"
+        "<p>" + render_inline(" ".join(paragraph.split()), cite) + "</p>"
         for paragraph in text.strip().split("\n\n")
     )
+
+
+def render_reading_page(template, *, page_title, heading, description, opening, source, contents, article, evidence=""):
+    blocks = {
+        "{{page-title}}": escape(page_title),
+        "{{heading}}": escape(heading),
+        "{{description}}": escape(description),
+        "{{research-current}}": ' aria-current="page"' if page_title == "Research" else "",
+        "{{proposal-current}}": ' aria-current="page"' if page_title == "Proposal" else "",
+        "{{source}}": escape(GITHUB_DOCS + source),
+        "<!-- opening -->": render_paragraphs(opening),
+        "<!-- evidence -->": evidence,
+        "<!-- contents -->": "\n".join(
+            f'<li><a href="#{anchor}">{escape(title)}</a></li>' for anchor, title in contents
+        ),
+        "<!-- article -->": "\n".join(article),
+    }
+    for marker, markup in blocks.items():
+        template = template.replace(marker, markup)
+    return template
 
 
 class Research:
     def __init__(self, markdown):
         body, references = markdown.strip().split("\n## References\n", 1)
         lead, self.sections = markdown_sections(body)
-        _, self.intro = lead.split("\n", 1)
+        self.heading, self.intro = lead.removeprefix("# ").split("\n", 1)
         self.references = {}
         for line in references.strip().splitlines():
             number, entry = line.split(". ", 1)
@@ -115,19 +142,7 @@ class Research:
             '<ol class="chart">' + "\n".join(bars) + '</ol>'
             '<figcaption class="figure-note">RICS, Q1 2025. The survey received more than 2,200 responses '
             'globally. Respondents could select up to three barriers. Bar lengths use a 0–50% scale.'
-            + self.cite(8) + '</figcaption></figure>'
-        )
-
-    def exchange_diagram(self):
-        return (
-            '<figure class="data-figure" aria-labelledby="exchange-title">'
-            '<h3 id="exchange-title">One release across two CDEs</h3>'
-            '<ol class="exchange-steps">'
-            '<li><strong>Engineering firm</strong>Issues a version from its own CDE.</li>'
-            '<li><strong>Shared interface</strong>Carries the exact version and its approval record.</li>'
-            '<li><strong>Owner</strong>Keeps the release and checks what it was approved for.</li>'
-            '</ol><figcaption class="figure-note">Proposed workflow. The project defines who can issue, '
-            'accept, and retain each release.' + self.cite(1) + '</figcaption></figure>'
+            + self.cite(15) + '</figcaption></figure>'
         )
 
     def footnotes(self):
@@ -148,23 +163,46 @@ class Research:
             '<h2 id="sources-title">Sources</h2><ol>\n' + "\n".join(entries) + '\n</ol></section>'
         )
 
-    def render(self, template):
-        template = re.sub(r"\{\{cite:(\d+)\}\}", lambda match: self.cite(int(match[1])), template)
-        article = [render_paragraphs(self.intro, cite=self.cite, css="intro")]
+    def render(self, template, metrics):
+        evidence = re.sub(r"\{\{cite:(\d+)\}\}", lambda match: self.cite(int(match[1])), metrics)
+        article = []
         for anchor, title, text in self.sections:
             paragraphs = render_paragraphs(text, cite=self.cite)
-            if anchor == "data-ownership-across-organizational-boundaries":
-                paragraphs += "\n" + self.exchange_diagram()
-            if anchor == "ai-adoption-and-the-information-it-depends-on":
+            if anchor == "reported-ai-use-and-barriers":
                 paragraphs += "\n" + self.barriers_chart()
             article.append(f'<section id="{anchor}"><h2>{escape(title)}</h2>\n{paragraphs}\n</section>')
         article.append(self.footnotes())
-        contents = [
-            f'<li><a href="#{anchor}">{escape(title)}</a></li>'
-            for anchor, title, _ in self.sections
-        ]
-        contents.append('<li><a href="#sources">Sources</a></li>')
-        return template.replace("<!-- contents -->", "\n".join(contents)).replace("<!-- article -->", "\n".join(article))
+        contents = [(anchor, title) for anchor, title, _ in self.sections]
+        contents.append(("sources", "Sources"))
+        return render_reading_page(
+            template,
+            page_title="Research",
+            heading=self.heading,
+            description="Research on how construction teams share project information, track versions, and hand over usable records.",
+            opening=self.intro,
+            source="CDE_AI_RESEARCH.md",
+            contents=contents,
+            article=article,
+            evidence=evidence,
+        )
+
+
+def render_proposal(template, markdown):
+    lead, sections = markdown_sections(markdown)
+    heading, opening = lead.removeprefix("# ").split("\n", 1)
+    return render_reading_page(
+        template,
+        page_title="Proposal",
+        heading=heading,
+        description="Subsoil's proposal for exchanging issued versions, decision records, and results across common data environments.",
+        opening=opening,
+        source="PROPOSAL.md",
+        contents=[(anchor, title) for anchor, title, _ in sections],
+        article=[
+            f'<section id="{anchor}"><h2>{escape(title)}</h2>\n{render_paragraphs(body)}\n</section>'
+            for anchor, title, body in sections
+        ],
+    )
 
 
 def render_philosophy(template, markdown):
@@ -288,11 +326,17 @@ def export_site(output):
     copy(ROOT / "assets/brand/subsoil-logo.svg", output / "assets/subsoil-logo.svg")
     copy(ROOT / "assets/brand/subsoil-wordmark.svg", output / "assets/subsoil-wordmark.svg")
 
+    reading_template = (SITE / "reading-page.html").read_text(encoding="utf-8")
     research = Research((ROOT / "docs/CDE_AI_RESEARCH.md").read_text(encoding="utf-8"))
+    metrics = (SITE / "research-metrics.html").read_text(encoding="utf-8")
     research_dir = output / "research"
     research_dir.mkdir()
-    template = (SITE / "research.html").read_text(encoding="utf-8")
-    (research_dir / "index.html").write_text(research.render(template), encoding="utf-8")
+    (research_dir / "index.html").write_text(research.render(reading_template, metrics), encoding="utf-8")
+
+    proposal = (ROOT / "docs/PROPOSAL.md").read_text(encoding="utf-8")
+    proposal_dir = output / "proposal"
+    proposal_dir.mkdir()
+    (proposal_dir / "index.html").write_text(render_proposal(reading_template, proposal), encoding="utf-8")
 
     for name in ("philosophy.css", "philosophy-drawing-handoff.webp", "philosophy-soil-layers.png"):
         copy(SITE / "assets" / name, output / "assets" / name)
@@ -329,7 +373,7 @@ def export_site(output):
     add_site_favicon(output)
     (output / ".nojekyll").write_text("", encoding="utf-8")
     check_local_links(output)
-    print(f"Exported the homepage, philosophy, research, handbook, and both presentations to {output}.")
+    print(f"Exported the homepage, philosophy, research, proposal, handbook, and both presentations to {output}.")
 
 
 if __name__ == "__main__":

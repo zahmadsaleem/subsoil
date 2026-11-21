@@ -14,6 +14,7 @@ and its model profile.
 - [Project data exchange slides](https://subsoil.dev/project-data-exchange/) and [speaker notes in Markdown](docs/PITCH.md)
 - [OCI handbook](https://subsoil.dev/handbook/)
 - [Research on CDEs, information flow, and AI](https://subsoil.dev/research/)
+- [Open CDE exchange proposal](docs/PROPOSAL.md)
 
 ## Try it
 

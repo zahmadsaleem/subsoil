@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{{description}}">
+  <title>{{page-title}} · Subsoil</title>
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      <a class="wordmark" href="../index.html"><img src="../assets/subsoil-logo.svg" alt="Subsoil" width="126" height="42"></a>
+      <nav aria-label="Main navigation">
+        <a href="../philosophy/index.html">Philosophy</a>
+        <a href="../research/index.html"{{research-current}}>Research</a>
+        <a href="../proposal/index.html"{{proposal-current}}>Proposal</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <header class="shell research-header">
+      <h1>{{heading}}</h1>
+      <!-- opening -->
+    </header>
+
+    <!-- evidence -->
+
+    <div class="shell reading-layout">
+      <nav class="contents contents-desktop" aria-label="{{page-title}} contents">
+        <h2>On this page</h2>
+        <ol>
+          <!-- contents -->
+        </ol>
+      </nav>
+      <details class="contents contents-mobile">
+        <summary>On this page</summary>
+        <nav aria-label="{{page-title}} contents">
+          <ol>
+            <!-- contents -->
+          </ol>
+        </nav>
+      </details>
+      <article class="research-copy" aria-label="{{page-title}} article">
+        <!-- article -->
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell">
+      <a href="{{source}}">GitHub</a>
+      <a class="footer-wordmark" href="../index.html"><img src="../assets/subsoil-wordmark.svg" alt="Subsoil" width="96" height="28"></a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -10,6 +10,7 @@ on:
       - assets/brand/subsoil-symbol.svg
       - docs/CDE_AI_RESEARCH.md
       - docs/PHILOSOPHY.md
+      - docs/PROPOSAL.md
       - docs/handbook.html
       - presentations/open-cde-governance/**
       - presentations/project-data-exchange/**

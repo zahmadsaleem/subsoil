@@ -34,8 +34,6 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
 .masthead nav { display: flex; gap: clamp(1rem, 3vw, 2.6rem); align-items: center; font-size: .94rem; }
 .masthead nav a { white-space: nowrap; text-decoration: none; }
 .masthead nav a:hover, .masthead nav [aria-current] { text-decoration: underline; }
-.masthead .nav-demo { border: 1px solid #9fac9b; padding: .48rem .82rem; }
-.masthead .nav-demo span { margin-left: .26rem; }
 
 .hero {
   display: grid;
@@ -107,10 +105,11 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
 .contents a:hover, .contents a:focus-visible { color: var(--green); text-decoration: underline; }
 .research-copy { max-width: 52rem; min-width: 0; }
 .research-copy p { max-width: 69ch; margin: 0 0 1.1em; }
-.research-copy .intro { font-size: clamp(1.1rem, 1.55vw, 1.26rem); color: var(--muted); }
 .research-copy section { margin-top: 2.65rem; padding-top: 1.3rem; border-top: 1px solid var(--line); }
 .research-copy h2 { margin-bottom: .9rem; font-size: clamp(2rem, 3.35vw, 3.3rem); letter-spacing: -.045em; }
 .research-copy p a, .footnotes a, .figure-note a { color: var(--green); }
+.research-copy p > a { text-decoration-thickness: .06em; text-decoration-color: #688478; }
+.research-copy p > a:hover { text-decoration-color: currentColor; }
 .cite { padding-inline: .2rem; font-size: .77em; line-height: 0; vertical-align: super; font-variant-numeric: tabular-nums; }
 .cite a { color: var(--green); text-decoration: none; }
 .cite a:hover { text-decoration: underline; }
@@ -124,9 +123,6 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
 .chart strong { text-align: right; font-variant-numeric: tabular-nums; }
 .chart-track { height: .68rem; background: #d5ded1; }
 .chart-bar { display: block; width: var(--share); height: 100%; background: var(--green); }
-.exchange-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .9rem; list-style: none; margin: 1rem 0 .7rem; padding: 0; }
-.exchange-steps li { border-top: 1px solid #a9b5a5; padding-top: .75rem; color: var(--muted); font-size: .89rem; }
-.exchange-steps strong { display: block; margin-bottom: .18rem; color: var(--ink); }
 .footnotes ol { margin: 0; padding-left: 1.6rem; font-size: .89rem; color: var(--muted); }
 .footnotes li { padding: .35rem .25rem .6rem; overflow-wrap: anywhere; }
 .backlinks { display: inline-flex; flex-wrap: wrap; gap: .35rem; margin-left: .3rem; }
@@ -148,8 +144,6 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
   .wordmark img { width: 5.6rem; }
   .masthead nav { gap: .64rem; font-size: .79rem; }
   .masthead nav a { display: inline-flex; min-block-size: 2.75rem; align-items: center; }
-  .masthead .nav-demo { padding: .3rem .4rem; }
-  .masthead .nav-demo span { display: none; }
   .hero { grid-template-columns: minmax(0, 1fr); gap: .9rem; padding-block: 2.85rem 2rem; }
   .hero h1 { font-size: clamp(2.6rem, 10vw, 4.25rem); }
   .hero-art { max-width: 31rem; justify-self: center; }
@@ -199,8 +193,6 @@ h1, h2, h3 { font-family: var(--headline); font-weight: 500; line-height: 1.02; 
 @media (max-width: 370px) {
   .wordmark img { width: 5rem; }
   .masthead nav { column-gap: .25rem; }
-  .masthead .nav-demo { padding-inline: .25rem; }
-  .exchange-steps { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: no-preference) {
